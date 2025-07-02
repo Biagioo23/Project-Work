@@ -3,7 +3,7 @@ import psycopg2
 from psycopg2 import Error
 from psycopg2.extras import execute_values
 from datetime import datetime
-
+#ciao
 # --- CONFIGURAZIONE GLOBALE ---
 print("Inizio configurazione per l'ETL dell'endpoint 'iscrizioni'...")
 
