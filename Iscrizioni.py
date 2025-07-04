@@ -3,7 +3,8 @@ import psycopg2
 from psycopg2 import Error
 from psycopg2.extras import execute_values
 from datetime import datetime
-#ciao
+
+
 # --- CONFIGURAZIONE GLOBALE ---
 print("Inizio configurazione per l'ETL dell'endpoint 'iscrizioni'...")
 
@@ -126,8 +127,9 @@ def transform_data_for_iscrizioni(raw_api_data):
             id_alunno = str(item.get("idAlunno")) if item.get("idAlunno") is not None else ''
             cognome = item.get("Cognome", "")
             nome = item.get("Nome", "")
-            cf = item.get("CodiceFiscale", "") # Assumo "CodiceFiscale" dall'API per "cf"
-            data_nascita = parse_date(item.get("DataNascita"))
+            cf = item.get("CF") or item.get("cf") or item.get("CodiceFiscale") or ""  # Qui controllo più nomi possibili
+
+            data_nascita = parse_date(item.get("DataNascita")) # Assumo "DataNascita" dall'API per "data_nascita"
             sesso = item.get("Sesso", "") 
             email = item.get("Email", "")
             voto_diploma = str(item.get("VotoDiploma", "")) 
