@@ -101,9 +101,3 @@ def main_dashboard():
         📞 Telefono: 02 1234567  
         🌐 [Sito ufficiale](https://www.itsrizzoli.it)
         """)
-
-# ✅ Esecuzione
-if st.session_state.logged_in:
-    main_dashboard()
-else:
-    login()
