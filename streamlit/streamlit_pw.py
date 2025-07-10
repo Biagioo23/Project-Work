@@ -15,11 +15,6 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = ""
 
-# Logout
-if st.sidebar.button("Logout"):
-    st.session_state.logged_in = False
-    st.session_state.username = ""
-
 # Login: se non loggato, mostra il form
 if not st.session_state.logged_in:
     st.title("🔐 Login Dashboard")
@@ -39,11 +34,12 @@ if not st.session_state.logged_in:
 
     st.stop() 
 
-st.sidebar.success(f"👋 Sei loggato come: {st.session_state.username}")
-if st.sidebar.button("Logout"):
-    st.session_state.logged_in = False
-    st.session_state.username = ""
-    st.stop() 
+if st.session_state.logged_in:
+    st.sidebar.success(f"👋 Sei loggato come: {st.session_state.username}")
+    if st.sidebar.button("Logout", key="logout_button"):
+        st.session_state.logged_in = False
+        st.session_state.username = ""
+        st.stop()
 # ------------------------ CONFIGURAZIONE DATABASE ------------------------
 # Sostituisci questi valori con quelli del tuo Azure PostgreSQL
 DB_USER = "jacopob"
