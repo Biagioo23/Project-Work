@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import psycopg2
 import matplotlib.pyplot as plt
 from PIL import Image
 
@@ -23,15 +24,15 @@ if "photo" not in st.session_state:
 # ✅ Funzione di login
 def login():
     st.title("🔐 Login ITS Rizzoli")
-    email = st.text_input("Email istituzionale")
-    password = st.text_input("Password", type="password")
+    email = st.text_input("Email istituzionale", key="login_email")
+    password = st.text_input("Password", type="password", key="login_password")
 
-    if st.button("Login"):
+    if st.button("Login", key="login_button"):
         if email in users and users[email] == password:
             st.session_state.logged_in = True
             st.session_state.email = email
             st.success(f"✅ Accesso effettuato! Benvenutə, {email}")
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("❌ Email o password errati")
 
@@ -40,31 +41,22 @@ def logout():
     st.session_state.logged_in = False
     st.session_state.email = ""
     st.session_state.photo = None
-    st.experimental_rerun()
+    st.rerun()
 
 # ✅ Dashboard principale
 def main_dashboard():
     st.title("Benvenuti all'ITS Rizzoli")
     st.subheader("Innovazione, Formazione, Lavoro")
 
-    # Sidebar: carica immagine utente
-    st.sidebar.title(f"👋 Ciao, {st.session_state.email}")
-    uploaded_file = st.sidebar.file_uploader("📷 Carica una tua foto", type=["jpg", "jpeg", "png"])
-    if uploaded_file is not None:
-        st.session_state.photo = uploaded_file
 
-    if st.session_state.photo:
-        image = Image.open(st.session_state.photo)
-        st.sidebar.image(image, caption="La tua foto", use_column_width=True)
-
-    # Sidebar: menu di navigazione
+    # Sidebar: navigazione
     st.sidebar.title("📂 Navigazione")
-    sezione = st.sidebar.radio("Vai a:", ["🏫 Chi siamo", "📊 Dashboard Dati", "📞 Contatti"])
+    sezione = st.sidebar.radio("Vai a:", ["🏫 Chi siamo", "📊 Dashboard Dati", "📞 Contatti"], key="menu_radio")
 
     # Pulsante Logout
     st.sidebar.button("🔓 Logout", on_click=logout)
 
-    # Sezioni principali
+    # Sezioni
     if sezione == "🏫 Chi siamo":
         st.header("Chi siamo")
         st.markdown("""
@@ -77,7 +69,7 @@ def main_dashboard():
         st.header("Dashboard dati ITS Rizzoli")
         st.info("Qui puoi visualizzare l'andamento degli studenti, placement e corsi.")
 
-        # Dati di esempio
+        # Dati esempio
         df = pd.DataFrame({
             "Anno": [2022, 2023, 2024],
             "Studenti Iscritti": [250, 300, 340],
@@ -101,3 +93,10 @@ def main_dashboard():
         📞 Telefono: 02 1234567  
         🌐 [Sito ufficiale](https://www.itsrizzoli.it)
         """)
+
+# ✅ Avvia login o dashboard
+if not st.session_state.logged_in:
+    login()
+else:
+    main_dashboard()
+# ✅ Fine del codice
