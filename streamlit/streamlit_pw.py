@@ -30,8 +30,11 @@ if not st.session_state["logged_in"]: # asas
         else:
             st.error("❌ Credenziali non valide.")
 
-    # Blocca tutto finché non loggato
-    st.stop()
+if st.session_state["logged_in"]:
+    st.sidebar.success(f"✅ Loggato come: {st.session_state['user']}")
+    if st.sidebar.button("Logout"):
+        st.session_state["logged_in"] = False
+        st.session_state["user"] = ""
 
 # ------------------------ CONFIGURAZIONE DATABASE ------------------------
 # Sostituisci questi valori con quelli del tuo Azure PostgreSQL
