@@ -10,12 +10,17 @@ users = {
     "jacopo": "biagio"
 }
 
-# Inizializza lo stato se non esiste
+# Inizializza stato login
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = ""
 
-# Se l'utente NON è loggato, mostra il form di login
+# Logout
+if st.sidebar.button("Logout"):
+    st.session_state.logged_in = False
+    st.session_state.username = ""
+
+# Login: se non loggato, mostra il form
 if not st.session_state.logged_in:
     st.title("🔐 Login Dashboard")
 
@@ -24,20 +29,21 @@ if not st.session_state.logged_in:
         password = st.text_input("Password", type="password")
         login_button = st.form_submit_button("Login")
 
-        if login_button and username in users and users[username] == password:
-            st.session_state.logged_in = True
-            st.session_state.username = username
-            st.success("✅ Login riuscito!")
-            st.rerun()  # 🔒 interrompe il rendering fino al prossimo run
-        elif login_button:
-            st.error("❌ Credenziali non valide.")
-    
-    st.stop()
+        if login_button:
+            if username in users and users[username] == password:
+                st.session_state.logged_in = True
+                st.session_state.username = username
+                st.success("✅ Login riuscito!")
+            else:
+                st.error("❌ Credenziali non valide.")
 
-st.sidebar.success(f"Sei loggato come: {st.session_state.username}")
+    st.stop() 
+
+st.sidebar.success(f"👋 Sei loggato come: {st.session_state.username}")
 if st.sidebar.button("Logout"):
     st.session_state.logged_in = False
-    st.rerun()
+    st.session_state.username = ""
+    st.stop() 
 # ------------------------ CONFIGURAZIONE DATABASE ------------------------
 # Sostituisci questi valori con quelli del tuo Azure PostgreSQL
 DB_USER = "jacopob"
