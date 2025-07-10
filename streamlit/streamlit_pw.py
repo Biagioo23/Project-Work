@@ -2,6 +2,37 @@ import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine
 import altair as alt
+# -------------------- LOGIN SETUP --------------------
+
+# Dizionario utenti: username -> password
+users = {
+    "admin": "1234",
+    "jacopo": "biagio"
+}
+
+# Funzione login
+def login():
+    st.title("🔐 Login Dashboard")
+
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Login"):
+        if username in users and users[username] == password:
+            st.session_state["logged_in"] = True
+            st.session_state["user"] = username
+            st.success("Login effettuato con successo.")
+            st.experimental_rerun()
+        else:
+            st.error("Credenziali non valide.")
+
+# Controllo login
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
+
+if not st.session_state["logged_in"]:
+    login()
+    st.stop()  # ⛔️ Ferma l'esecuzione se non loggato
 
 # ------------------------ CONFIGURAZIONE DATABASE ------------------------
 # Sostituisci questi valori con quelli del tuo Azure PostgreSQL
