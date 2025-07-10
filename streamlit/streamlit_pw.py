@@ -28,7 +28,7 @@ if not st.session_state.logged_in:
             st.session_state.logged_in = True
             st.session_state.username = username
             st.success("✅ Login riuscito!")
-            st.stop()  # 🔒 interrompe il rendering fino al prossimo run
+            st.rerun()  # 🔒 interrompe il rendering fino al prossimo run
         elif login_button:
             st.error("❌ Credenziali non valide.")
     
@@ -37,7 +37,7 @@ if not st.session_state.logged_in:
 st.sidebar.success(f"Sei loggato come: {st.session_state.username}")
 if st.sidebar.button("Logout"):
     st.session_state.logged_in = False
-    st.experimental_rerun()
+    st.rerun()
 # ------------------------ CONFIGURAZIONE DATABASE ------------------------
 # Sostituisci questi valori con quelli del tuo Azure PostgreSQL
 DB_USER = "jacopob"
