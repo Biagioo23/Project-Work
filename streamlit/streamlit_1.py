@@ -37,9 +37,6 @@ with st.spinner("Caricamento dati dal database..."):
 
 
 
-# ✅ Configura la pagina
-st.set_page_config(page_title="ITS Rizzoli - Dashboard", layout="wide")
-
 # ✅ Utenti autorizzati (email: password)
 users = {
     "governance": {'password' : '1234', 'role' : 'governance'},
