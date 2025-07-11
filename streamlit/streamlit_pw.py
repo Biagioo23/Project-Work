@@ -2,38 +2,44 @@ import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine
 import altair as alt
-# -------------------- LOGIN SETUP --------------------
+# -------------------- LOGIN --------------------
 
-# Dizionario utenti: username -> password
+# Dizionario utenti
 users = {
     "admin": "1234",
     "jacopo": "biagio"
 }
 
-# Funzione login
-def login():
+# Inizializza stato login
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+    st.session_state.username = ""
+
+# Login: se non loggato, mostra il form
+if not st.session_state.logged_in:
     st.title("🔐 Login Dashboard")
 
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
+    with st.form("login_form"):
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        login_button = st.form_submit_button("Login")
 
-    if st.button("Login"):
-        if username in users and users[username] == password:
-            st.session_state["logged_in"] = True
-            st.session_state["user"] = username
-            st.success("Login effettuato con successo.")
-            st.experimental_rerun()
-        else:
-            st.error("Credenziali non valide.")
+        if login_button:
+            if username in users and users[username] == password:
+                st.session_state.logged_in = True
+                st.session_state.username = username
+                st.success("✅ Login riuscito!")
+            else:
+                st.error("❌ Credenziali non valide.")
 
-# Controllo login
-if "logged_in" not in st.session_state:
-    st.session_state["logged_in"] = False
+    st.stop() 
 
-if not st.session_state["logged_in"]:
-    login()
-    st.stop()  # ⛔️ Ferma l'esecuzione se non loggato
-
+if st.session_state.logged_in:
+    st.sidebar.success(f"👋 Sei loggato come: {st.session_state.username}")
+    if st.sidebar.button("Logout", key="logout_button"):
+        st.session_state.logged_in = False
+        st.session_state.username = ""
+        st.stop()
 # ------------------------ CONFIGURAZIONE DATABASE ------------------------
 # Sostituisci questi valori con quelli del tuo Azure PostgreSQL
 DB_USER = "jacopob"
