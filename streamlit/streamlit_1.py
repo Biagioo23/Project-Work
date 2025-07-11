@@ -1,160 +1,173 @@
 import streamlit as st
 import pandas as pd
-import psycopg2
 import matplotlib.pyplot as plt
-import seaborn as sns
+from PIL import Image
+from sqlalchemy import create_engine
+import altair as alt
 
-# Configura pagina Streamlit
-st.set_page_config(page_title="Dashboard ITS Rizzoli", layout="wide")
+DB_USER = "jacopob"
+DB_PASS = "BiagioJ$"
+DB_HOST = "databaseprojectwork.postgres.database.azure.com"
+DB_PORT = "5432"
+DB_NAME = "projectwork"
 
-# Utenti autorizzati (email: password)
+# Stringa di connessione SQLAlchemy
+conn_string = (
+    f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=require"
+)
+engine = create_engine(conn_string)
+
+@st.cache_data
+def load_table(table_name: str) -> pd.DataFrame:
+    """
+    Carica una tabella dal database e la restituisce come DataFrame.
+    """
+    query = f"SELECT * FROM {table_name};"
+    return pd.read_sql(query, engine)
+
+# Caricamento dati
+with st.spinner("Caricamento dati dal database..."):
+    df_iscrizioni = load_table("iscrizioni")
+    df_stage = load_table("stage")
+    df_corso_docenti = load_table("corso_docenti")
+    df_corsi = load_table('corsi')
+    df_corso_materie = load_table('corso_materie_its')  
+    df_docenti = load_table('docenti')
+    df_ore_alunno = load_table('ore_alunno')
+
+
+
+# ✅ Configura la pagina
+st.set_page_config(page_title="ITS Rizzoli - Dashboard", layout="wide")
+
+# ✅ Utenti autorizzati (email: password)
 users = {
-    "isret.jahan@itsrizzoli.it": "1234",
-    "jacopo.biaggioni@itsrizzoli.it": "4321"
+    "governance": {'password' : '1234', 'role' : 'governance'},
+    "coordinamento": {'password' : '4321', 'role' : 'coordinamento'},
 }
 
-# Stato sessione login
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-if "email" not in st.session_state:
-    st.session_state.email = ""
+# ✅ Inizializza lo stato della sessione
+if "photo" not in st.session_state: 
+    st.session_state.photo = None
 
-# Funzione login
+# ✅ Funzione di login
 def login():
-    st.title("🔐 Login ITS Rizzoli")
-    email = st.text_input("Email istituzionale", key="login_email")
-    password = st.text_input("Password", type="password", key="login_password")
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
+    if not st.session_state.logged_in:
+        with st.form("login"):
+            st.title("🔐 Login")
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("Accedi")
 
-    if st.button("Login"):
-        if email in users and users[email] == password:
-            st.session_state.logged_in = True
-            st.session_state.email = email
-            st.success(f"✅ Accesso effettuato! Benvenutə, {email}")
-            st.rerun()
-        else:
-            st.error("❌ Email o password errati")
+            if submitted:
+                user = users.get(username)
+                if user and user["password"] == password:
+                    st.session_state.logged_in = True
+                    st.session_state.username = username
+                    st.session_state.role = user["role"]
+                    st.success(f"Benvenuto {username}!")
+                    st.rerun()
+                else:
+                    st.error("Credenziali errate.")
+login()
 
-# Funzione logout
+# ✅ Funzione di logout
 def logout():
     st.session_state.logged_in = False
-    st.session_state.email = ""
+    st.session_state.photo = None
     st.rerun()
 
-# Funzione connessione DB con gestione errori
-@st.cache_resource
-def get_connection():
-    try:
-        conn = psycopg2.connect(
-            host="localhost",          # Cambia con il tuo host
-            database="nome_database",  # Cambia con il tuo database
-            user="tuo_username",       # Cambia con il tuo username
-            password="tua_password"    # Cambia con la tua password
-        )
-        return conn
-    except Exception as e:
-        st.error(f"Errore connessione al database: {e}")
-        return None
+# ✅ Dashboard principale
+if st.session_state.logged_in:
+    role = st.session_state.role
+    st.sidebar.markdown(f"👤 **Ruolo:** {role.capitalize()}")
 
-# Funzione per caricare dati iscrizioni
-@st.cache_data(ttl=600)
-def load_data(conn, anno=None):
-    if conn is None:
-        return pd.DataFrame()
-    query = "SELECT * FROM iscrizioni"
-    if anno:
-        query += f" WHERE anno = {anno}"
-    return pd.read_sql_query(query, conn)
+    if st.sidebar.button("🔓 Logout"):
+        st.session_state.clear()
+        st.rerun()
 
-# Dashboard principale
-def main_dashboard():
-    st.title("📊 Dashboard ITS Rizzoli")
-    st.sidebar.title("📂 Navigazione")
-    pagina = st.sidebar.radio("Seleziona sezione:", ["🏫 Chi siamo", "📊 Dashboard Dati", "📞 Contatti"])
+    # 👥 Governance: vista aggregata
+    if role == "governance":
+        st.title("📈 Dashboard Governance")
+        st.markdown("### 👁️‍🗨️ Overview generale")
+        st.metric("Totale Studenti", len(df_iscrizioni))
+        st.metric("Stage Attivi", len(df_stage))
+        st.metric("Corsi Attivi", len(df_corsi))
+        # 📊 Grafico: Distribuzione esiti finali
+        st.subheader("📊 Distribuzione degli esiti finali")
+        esiti_count = df_iscrizioni['esitofinale'].value_counts().reset_index()
+        esiti_count.columns = ['Esito Finale', 'Numero Studenti']
+        grafico_esiti = alt.Chart(esiti_count).mark_bar().encode(
+            x='Esito Finale:N',
+            y='Numero Studenti:Q',
+            color='Esito Finale:N',
+            tooltip=['Esito Finale', 'Numero Studenti']
+        ).properties(title='Esiti finali degli studenti')
+        st.altair_chart(grafico_esiti, use_container_width=True)
 
-    st.sidebar.button("🔓 Logout", on_click=logout)
+        # 📊 Grafico: Stage per azienda
+        st.subheader("🏢 Distribuzione degli stage per azienda")
+        stage_count = df_stage['azienda'].value_counts().reset_index()
+        stage_count.columns = ['Azienda', 'Numero Studenti']
+        grafico_stage = alt.Chart(stage_count).mark_bar().encode(
+            x='Azienda:N',
+            y='Numero Studenti:Q',
+            color='Azienda:N',
+            tooltip=['Azienda', 'Numero Studenti']
+        ).properties(title='Numero di studenti per azienda di stage')
+        st.altair_chart(grafico_stage, use_container_width=True)
 
-    if pagina == "🏫 Chi siamo":
-        st.header("Chi siamo")
-        st.markdown("""
-        L'ITS Rizzoli è un istituto tecnico superiore dedicato alla formazione in ambito ICT, Intelligenza Artificiale, Big Data, e altro ancora.
+        # 📊 Grafico: Ore lavorate dai docenti
+        st.subheader("👩‍🏫 Ore lavorate dai docenti")
+        grafico_docenti = alt.Chart(df_corso_docenti).mark_bar().encode(
+            x='cognome:N',
+            y='ore_lavorate:Q',
+            color='cognome:N',
+            tooltip=['cognome', 'nome', 'materia', 'ore_lavorate']
+        ).properties(title='Ore lavorate per docente')
+        st.altair_chart(grafico_docenti, use_container_width=True)
 
-        Offriamo percorsi innovativi, strettamente connessi con le imprese del territorio e con un alto tasso di occupabilità.
-        """)
 
-    elif pagina == "📊 Dashboard Dati":
-        st.header("Dashboard dati iscrizioni")
+    # 🛠️ Coordinamento: vista tecnica
+    elif role == "coordinamento":
+        st.title("🧰 Dashboard Coordinamento Didattico")
+        st.markdown("### 📘 Dettagli su corsi, ore e docenti")
+        
+        st.subheader("Ore frequentate per studente")
+        df_ore_alunno['ore_presenza'] = df_ore_alunno['minuti_presenza'] / 60
+        grafico_ore = alt.Chart(df_ore_alunno).mark_bar().encode(
+            x='materia:N',
+            y='ore_presenza:Q',
+            color='materia:N',
+            tooltip=['nome', 'cognome', 'materia', 'ore_presenza']
+        ).properties(title='Ore di presenza per materia')
+        st.altair_chart(grafico_ore, use_container_width=True)
 
-        conn = get_connection()
-        if conn is None:
-            st.stop()
+        st.subheader("Materie con più ore pianificate")
+        grafico_pianificate = alt.Chart(df_corso_materie).mark_bar().encode(
+            x='materia:N',
+            y='ore_pianificate_monte_ore:Q',
+            color='materia:N',
+            tooltip=['materia', 'ore_pianificate_monte_ore']
+        ).properties(title='Ore pianificate da piano ITS per materia')
+        st.altair_chart(grafico_pianificate, use_container_width=True)
 
-        df_iscrizioni = load_data(conn)
+        st.subheader("Stage per mese")
+        st.subheader("🗓️ Stage per mese")
+        df_stage['mese_inizio'] = pd.to_datetime(df_stage['datainiziostage']).dt.to_period('M')
+        stage_mese = df_stage['mese_inizio'].value_counts().sort_index().reset_index()
+        stage_mese.columns = ['Mese', 'Numero Stage']
+        grafico_stage_mese = alt.Chart(stage_mese).mark_bar().encode(
+            x='Mese:N',
+            y='Numero Stage:Q',
+            tooltip=['Mese', 'Numero Stage']
+        ).properties(title='Distribuzione degli stage per mese')
+        st.altair_chart(grafico_stage_mese, use_container_width=True)
 
-        if df_iscrizioni.empty:
-            st.warning("Nessun dato disponibile.")
-            return
+        st.subheader("Assegnazione Docenti - Corsi")
+        st.dataframe(df_corso_docenti)
 
-        anni = sorted(df_iscrizioni["anno"].dropna().unique(), reverse=True)
-        anno_scelto = st.sidebar.selectbox("Seleziona Anno", anni)
-
-        df_filtered = df_iscrizioni[df_iscrizioni["anno"] == anno_scelto]
-
-        # KPI
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("👨‍🎓 Totale Iscritti", df_filtered["id_alunno"].nunique())
-        with col2:
-            perc_fem = (df_filtered[df_filtered["genere"] == "F"].shape[0] / df_filtered.shape[0]) * 100 if df_filtered.shape[0] > 0 else 0
-            st.metric("👩‍🎓 % Femminile", f"{perc_fem:.1f}%")
-        with col3:
-            eta_media = df_filtered["eta"].mean()
-            st.metric("📈 Età media", f"{eta_media:.1f} anni")
-
-        # Grafico iscritti per corso
-        query_corsi = """
-        SELECT c.nome_corso, COUNT(*) as n_iscritti
-        FROM iscrizioni i
-        JOIN corsi c ON i.id_corso = c.id_corso
-        WHERE i.anno = %s
-        GROUP BY c.nome_corso
-        ORDER BY n_iscritti DESC;
-        """
-        df_corsi = pd.read_sql_query(query_corsi, conn, params=[anno_scelto])
-
-        st.subheader("Iscritti per corso")
-        fig, ax = plt.subplots(figsize=(10, 5))
-        sns.barplot(data=df_corsi, y="nome_corso", x="n_iscritti", ax=ax, palette="Blues_d")
-        ax.set_xlabel("Numero Iscritti")
-        ax.set_ylabel("Corso")
-        st.pyplot(fig)
-
-        # Grafico andamento iscrizioni nel tempo
-        query_trend = """
-        SELECT anno, COUNT(*) as totale
-        FROM iscrizioni
-        GROUP BY anno
-        ORDER BY anno;
-        """
-        df_trend = pd.read_sql_query(query_trend, conn)
-
-        st.subheader("Andamento iscrizioni nel tempo")
-        fig2, ax2 = plt.subplots(figsize=(10, 4))
-        ax2.plot(df_trend["anno"], df_trend["totale"], marker="o", color="green")
-        ax2.set_xlabel("Anno")
-        ax2.set_ylabel("Iscrizioni")
-        ax2.set_title("Trend iscrizioni")
-        st.pyplot(fig2)
-
-    elif pagina == "📞 Contatti":
-        st.header("Contatti")
-        st.markdown("""
-        - Email: info@itsrizzoli.it  
-        - Telefono: +39 123 456 7890  
-        - Indirizzo: Via Rizzoli 20, Milano
-        """)
-
-# Avvio app
-if not st.session_state.logged_in:
-    login()
-else:
-    main_dashboard()
+    else:
+        st.error("Ruolo non riconosciuto.")
