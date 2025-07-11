@@ -9,7 +9,7 @@ st.set_page_config(page_title="ITS Rizzoli - Dashboard", layout="wide")
 # ✅ Utenti autorizzati (email: password)
 users = {
     "isret.jahan@itsrizzoli.it": "1234",
-    "jacopo.biaggioni@itsrizzoli.it": "4321"
+    "jacopo.biagioni@itsrizzoli.it": "4321"
 }
 
 # ✅ Inizializza lo stato della sessione
@@ -31,7 +31,7 @@ def login():
             st.session_state.logged_in = True
             st.session_state.email = email
             st.success(f"✅ Accesso effettuato! Benvenutə, {email}")
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("❌ Email o password errati")
 
@@ -40,7 +40,7 @@ def logout():
     st.session_state.logged_in = False
     st.session_state.email = ""
     st.session_state.photo = None
-    st.experimental_rerun()
+    st.rerun()
 
 # ✅ Dashboard principale
 def main_dashboard():
