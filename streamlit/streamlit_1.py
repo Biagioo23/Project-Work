@@ -131,7 +131,9 @@ if st.session_state.logged_in:
 
             esiti_count = df_iscrizioni['esitofinale_pulito'].value_counts().reset_index()
             esiti_count.columns = ['Esito Finale', 'Numero Studenti']
+            esiti_count = esiti_count[esiti_count['Esito Finale'] != 'Non definito']  # 🔥 Escludi i non definiti
             esiti_count = esiti_count.sort_values('Numero Studenti', ascending=False)
+
 
             grafico_esiti = alt.Chart(esiti_count).mark_bar().encode(
                 y=alt.Y('Esito Finale:N', sort='-x', title="Esito Finale"),
