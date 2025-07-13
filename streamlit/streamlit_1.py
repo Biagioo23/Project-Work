@@ -153,7 +153,7 @@ if st.session_state.logged_in:
             stage_count = df_stage['azienda'].value_counts().reset_index()
             stage_count.columns = ['Azienda', 'Numero Studenti']
             grafico_stage = alt.Chart(stage_count).mark_bar().encode(
-                x='Azienda:N',
+                x=alt.X('Azienda: N', sort='-y'),
                 y='Numero Studenti:Q',
                 color=alt.Color('Azienda:N', legend=None),
                 tooltip=['Azienda', 'Numero Studenti']
