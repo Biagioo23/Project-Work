@@ -155,14 +155,14 @@ if st.session_state.logged_in:
             stage_count.columns = ['Azienda', 'Numero Studenti']
 
             # Mostra solo le prime 15 aziende
-            top_aziende = stage_count.head(15)
+            top_aziende = stage_count.head(20)
 
             grafico_stage = alt.Chart(top_aziende).mark_bar().encode(
                 x=alt.X('Azienda:N', sort=alt.EncodingSortField(field='Numero Studenti', order='descending')),
                 y='Numero Studenti:Q',
                 color=alt.Color('Azienda:N', legend=None),
                 tooltip=['Azienda', 'Numero Studenti']
-            ).properties(title='Top 15 aziende per numero di studenti in stage').interactive()
+            ).properties(title='Top 20 aziende per numero di studenti in stage').interactive()
 
             st.altair_chart(grafico_stage, use_container_width=True)
         else:
@@ -180,7 +180,7 @@ if st.session_state.logged_in:
             df_docenti_pulito = df_corso_docenti.dropna(subset=['ore_lavorate'])
 
             if not df_docenti_pulito.empty:
-                df_docenti_ore_totali = df_docenti_pulito.groupby(['cognome', 'nome'])['ore_lavorate'].sum().reset_index()
+                df_docenti_ore_totali = df_docenti_pulito.groupby(['cognome', 'nome'])['ore_lavorate'].sum().reset_index().sort_values(by='ore_lavorate', ascending=False).head(20)
                 df_docenti_ore_totali.columns = ['Cognome', 'Nome', 'Ore Totali Lavorate']
 
                 grafico_docenti = alt.Chart(df_docenti_ore_totali).mark_bar().encode(
@@ -188,7 +188,7 @@ if st.session_state.logged_in:
                     y=alt.Y('Ore Totali Lavorate:Q', title="Ore Lavorate"),
                     color=alt.Color('Cognome:N', legend=None),
                     tooltip=['Cognome', 'Nome', alt.Tooltip('Ore Totali Lavorate', format='.1f')]
-                ).properties(title='Ore totali lavorate per docente').interactive()
+                ).properties(title='Ore totali lavorate per docente (Top 20)').interactive()
                 st.altair_chart(grafico_docenti, use_container_width=True)
             else:
                 st.warning("⚠️ Nessun dato numerico valido per le 'ore_lavorate' nella tabella 'corso_docenti'.")
@@ -327,7 +327,7 @@ if st.session_state.logged_in:
                     y=alt.Y('ore_pianificate_monte_ore:Q', title="Ore pianificate"),
                     color=alt.Color('materia:N', legend=None),
                     tooltip=['materia', alt.Tooltip('ore_pianificate_monte_ore', format='.1f')]
-                ).properties(title='Ore pianificate da piano ITS per materia').interactive()
+                ).properties(title='Ore pianificate da piano ITS per materia (Top 20)').interactive()
                 st.altair_chart(grafico_pianificate, use_container_width=True)
             else:
                 st.warning("⚠️ Nessun dato numerico valido per le ore pianificate in 'corso_materie_its'.")
