@@ -37,20 +37,20 @@ with st.spinner("Caricamento dati dal database..."):
 
 
 
-# ✅ Configura la pagina
+# Configura la pagina
 st.set_page_config(page_title="ITS Rizzoli - Dashboard", layout="wide")
 
-# ✅ Utenti autorizzati (email: password)
+# Utenti autorizzati (email: password)
 users = {
     "governance": {'password' : '1234', 'role' : 'governance'},
     "coordinamento": {'password' : '4321', 'role' : 'coordinamento'},
 }
 
-# ✅ Inizializza lo stato della sessione
+# Inizializza lo stato della sessione
 if "photo" not in st.session_state: 
     st.session_state.photo = None
 
-# ✅ Funzione di login
+# Funzione di login
 def login():
     if "logged_in" not in st.session_state:
         st.session_state.logged_in = False
@@ -73,13 +73,13 @@ def login():
                     st.error("Credenziali errate.")
 login()
 
-# ✅ Funzione di logout
+# Funzione di logout
 def logout():
     st.session_state.logged_in = False
     st.session_state.photo = None
     st.rerun()
 
-# ✅ Dashboard principale
+# Dashboard principale
 if st.session_state.logged_in:
     role = st.session_state.role
     st.sidebar.markdown(f"👤 **Ruolo:** {role.capitalize()}")
@@ -88,14 +88,14 @@ if st.session_state.logged_in:
         st.session_state.clear()
         st.rerun()
 
-    # 👥 Governance: vista aggregata
+    # Governance: vista aggregata
     if role == "governance":
         st.title("📈 Dashboard Governance")
         st.markdown("### 👁️‍🗨️ Overview generale")
         st.metric("Totale Studenti", len(df_iscrizioni))
         st.metric("Stage Attivi", len(df_stage))
         st.metric("Corsi Attivi", len(df_corsi))
-        # 📊 Grafico: Distribuzione esiti finali
+        # Grafico: Distribuzione esiti finali
         st.subheader("📊 Distribuzione degli esiti finali")
         esiti_count = df_iscrizioni['esitofinale'].value_counts().reset_index()
         esiti_count.columns = ['Esito Finale', 'Numero Studenti']
@@ -107,7 +107,7 @@ if st.session_state.logged_in:
         ).properties(title='Esiti finali degli studenti')
         st.altair_chart(grafico_esiti, use_container_width=True)
 
-        # 📊 Grafico: Stage per azienda
+        # Grafico: Stage per azienda
         st.subheader("🏢 Distribuzione degli stage per azienda")
         stage_count = df_stage['azienda'].value_counts().reset_index()
         stage_count.columns = ['Azienda', 'Numero Studenti']
@@ -119,7 +119,7 @@ if st.session_state.logged_in:
         ).properties(title='Numero di studenti per azienda di stage')
         st.altair_chart(grafico_stage, use_container_width=True)
 
-        # 📊 Grafico: Ore lavorate dai docenti
+        # Grafico: Ore lavorate dai docenti
         st.subheader("👩‍🏫 Ore lavorate dai docenti")
         grafico_docenti = alt.Chart(df_corso_docenti).mark_bar().encode(
             x='cognome:N',
@@ -130,7 +130,7 @@ if st.session_state.logged_in:
         st.altair_chart(grafico_docenti, use_container_width=True)
 
 
-    # 🛠️ Coordinamento: vista tecnica
+    # Coordinamento: vista tecnica
     elif role == "coordinamento":
         st.title("🧰 Dashboard Coordinamento Didattico")
         st.markdown("### 📘 Dettagli su corsi, ore e docenti")
