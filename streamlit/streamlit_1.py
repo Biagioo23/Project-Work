@@ -5,25 +5,44 @@ from PIL import Image
 from sqlalchemy import create_engine
 import altair as alt
 
+# --- Configurazione Iniziale e Funzioni di Base ---
+
+# 📥 Carica il logo solo nella login
+def mostra_logo():
+    logo_path = "logo_itsar.png" # Assicurati che questo percorso sia corretto e il file esista
+    try:
+        logo = Image.open(logo_path)
+        st.image(logo, width=200)
+    except FileNotFoundError:
+        st.warning(f"⚠️ Immagine logo non trovata: {logo_path}. Assicurati sia nella stessa directory del tuo script Streamlit.")
+
+# 🔐 Connessione database
 DB_USER = "jacopob"
 DB_PASS = "BiagioJ$"
 DB_HOST = "databaseprojectwork.postgres.database.azure.com"
 DB_PORT = "5432"
 DB_NAME = "projectwork"
 
-# Stringa di connessione SQLAlchemy
 conn_string = (
     f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=require"
 )
-engine = create_engine(conn_string)
+# Aumenta il timeout per connessioni lente o query complesse
+engine = create_engine(conn_string, connect_args={'options': '-c statement_timeout=5000'}) # 5 secondi di timeout
 
-@st.cache_data
+# Decoratore per il caching dei dati con una durata di vita di 1 ora (3600 secondi)
+# Questo aiuta a non sovraccaricare il DB e a velocizzare, ma si aggiorna ogni ora.
+# Per un aggiornamento forzato, puoi pulire la cache di Streamlit manualmente.
+@st.cache_data(ttl=3600)
 def load_table(table_name: str) -> pd.DataFrame:
-    """
-    Carica una tabella dal database e la restituisce come DataFrame.
-    """
     query = f"SELECT * FROM {table_name};"
-    return pd.read_sql(query, engine)
+    try:
+        df = pd.read_sql(query, engine)
+        # Rimosso il messaggio di successo per non intasare la dashboard
+        # st.success(f"Tabella '{table_name}' caricata con successo.")
+        return df
+    except Exception as e:
+        st.error(f"Errore durante il caricamento della tabella '{table_name}': {e}")
+        return pd.DataFrame() # Ritorna un DataFrame vuoto in caso di errore
 
 # Caricamento dati
 with st.spinner("Caricamento dati dal database..."):
@@ -40,9 +59,10 @@ with st.spinner("Caricamento dati dal database..."):
 st.set_page_config(page_title="ITS Rizzoli - Dashboard", layout="wide")
 
 # Utenti autorizzati (email: password)
+# ✅ Utenti autorizzati
 users = {
-    "governance": {'password' : '1234', 'role' : 'governance'},
-    "coordinamento": {'password' : '4321', 'role' : 'coordinamento'},
+    "governance": {'password': '1234', 'role': 'governance'},
+    "coordinamento": {'password': '4321', 'role': 'coordinamento'},
 }
 
 # Inizializza lo stato della sessione
@@ -53,7 +73,9 @@ if "photo" not in st.session_state:
 def login():
     if "logged_in" not in st.session_state:
         st.session_state.logged_in = False
+
     if not st.session_state.logged_in:
+        mostra_logo()
         with st.form("login"):
             st.title("🔐 Login")
             username = st.text_input("Username")
@@ -70,7 +92,6 @@ def login():
                     st.rerun()
                 else:
                     st.error("Credenziali errate.")
-login()
 
 # Funzione di logout
 def logout():
@@ -84,8 +105,7 @@ if st.session_state.logged_in:
     st.sidebar.markdown(f"👤 **Ruolo:** {role.capitalize()}")
 
     if st.sidebar.button("🔓 Logout"):
-        st.session_state.clear()
-        st.rerun()
+        logout()
 
     # Governance: vista aggregata
     if role == "governance":
