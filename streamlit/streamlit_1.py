@@ -149,18 +149,25 @@ if st.session_state.logged_in:
 
         # 🏢 Distribuzione degli stage per azienda
         st.subheader("🏢 Distribuzione degli stage per azienda")
+
         if 'azienda' in df_stage.columns and not df_stage.empty:
             stage_count = df_stage['azienda'].value_counts().reset_index()
             stage_count.columns = ['Azienda', 'Numero Studenti']
-            grafico_stage = alt.Chart(stage_count).mark_bar().encode(
+
+            # Mostra solo le prime 15 aziende
+            top_aziende = stage_count.head(15)
+
+            grafico_stage = alt.Chart(top_aziende).mark_bar().encode(
                 x=alt.X('Azienda:N', sort=alt.EncodingSortField(field='Numero Studenti', order='descending')),
                 y='Numero Studenti:Q',
                 color=alt.Color('Azienda:N', legend=None),
                 tooltip=['Azienda', 'Numero Studenti']
-            ).properties(title='Numero di studenti per azienda di stage').interactive()
+            ).properties(title='Top 15 aziende per numero di studenti in stage').interactive()
+
             st.altair_chart(grafico_stage, use_container_width=True)
         else:
             st.warning("⚠️ La colonna 'azienda' non è presente o la tabella stage è vuota.")
+
 
         st.markdown("---")
 
@@ -192,32 +199,36 @@ if st.session_state.logged_in:
 
         # 🥧 Distribuzione studenti per sesso (CORRETTO PULIZIA DATI)
         st.subheader("🥧 Distribuzione studenti per sesso")
+
         if 'sesso' in df_iscrizioni.columns and not df_iscrizioni.empty:
             # Pulizia e normalizzazione della colonna 'sesso'
             df_iscrizioni['sesso_pulito'] = df_iscrizioni['sesso'].astype(str).str.upper().str.strip()
+            
+            # Considera solo M e F, escludi tutto il resto
             valid_genders = ['M', 'F']
-            df_iscrizioni.loc[~df_iscrizioni['sesso_pulito'].isin(valid_genders), 'sesso_pulito'] = 'Altro'
+            df_filtrato = df_iscrizioni[df_iscrizioni['sesso_pulito'].isin(valid_genders)]
 
-            sesso_counts = df_iscrizioni['sesso_pulito'].value_counts()
+            sesso_counts = df_filtrato['sesso_pulito'].value_counts()
 
             if not sesso_counts.empty:
                 labels = sesso_counts.index.tolist()
                 sizes = sesso_counts.values
                 colors = plt.get_cmap('Set2').colors[:len(labels)]
 
-                fig, ax = plt.subplots(figsize=(6, 6)) # Aumenta la dimensione per migliore leggibilità
+                fig, ax = plt.subplots(figsize=(6, 6))
                 wedges, texts, autotexts = ax.pie(
                     sizes, labels=labels, autopct='%1.1f%%', startangle=90,
-                    colors=colors, textprops={'fontsize': 12, 'color': 'black'} # Rende il testo nero per contrasto
+                    colors=colors, textprops={'fontsize': 12, 'color': 'black'}
                 )
-                ax.axis('equal') # Assicura che il grafico a torta sia circolare.
-                plt.setp(autotexts, size=10, weight="bold") # Rende le percentuali in grassetto
-                plt.setp(texts, size=10) # Rende le etichette un po' più piccole
+                ax.axis('equal')
+                plt.setp(autotexts, size=10, weight="bold")
+                plt.setp(texts, size=10)
                 st.pyplot(fig)
             else:
-                st.info("ℹ️ Nessun dato valido per la colonna 'sesso' dopo la pulizia.")
+                st.info("ℹ️ Nessun dato valido per 'M' o 'F' nella colonna 'sesso'.")
         else:
             st.warning("⚠️ La colonna 'sesso' non è presente nella tabella iscrizioni o la tabella è vuota.")
+
 
         st.markdown("---")
 
@@ -271,31 +282,6 @@ if st.session_state.logged_in:
 
         st.markdown("---")
 
-        # ⌛ Ore Totali di Presenza per Studente
-        st.subheader("⌛ Ore Totali di Presenza per Studente")
-        if 'minuti_presenza' in df_ore_alunno.columns and not df_ore_alunno.empty:
-            df_ore_alunno['minuti_presenza'] = pd.to_numeric(df_ore_alunno['minuti_presenza'], errors='coerce')
-            df_ore_alunno_pulito = df_ore_alunno.dropna(subset=['minuti_presenza'])
-
-            if not df_ore_alunno_pulito.empty:
-                df_ore_alunno_pulito['ore_presenza_totali'] = df_ore_alunno_pulito['minuti_presenza'] / 60
-                ore_totali_per_alunno = df_ore_alunno_pulito.groupby(['id_alunno', 'nome', 'cognome'])['ore_presenza_totali'].sum().reset_index()
-                ore_totali_per_alunno['Alunno'] = ore_totali_per_alunno['nome'] + ' ' + ore_totali_per_alunno['cognome']
-
-                grafico_ore_alunno_totali = alt.Chart(ore_totali_per_alunno).mark_bar().encode(
-                    x=alt.X('Alunno:N', sort='-y', title="Studente"),
-                    y=alt.Y('ore_presenza_totali:Q', title="Ore totali di presenza"),
-                    color=alt.Color('Alunno:N', legend=None),
-                    tooltip=['Alunno', alt.Tooltip('ore_presenza_totali', format='.2f')]
-                ).properties(title='Ore totali di presenza per studente').interactive()
-                st.altair_chart(grafico_ore_alunno_totali, use_container_width=True)
-            else:
-                st.warning("⚠️ Nessun dato valido per il calcolo delle ore di presenza in 'ore_alunno'.")
-        else:
-            st.warning("⚠️ Colonne necessarie (minuti_presenza, nome, cognome) non trovate in ore_alunno o la tabella è vuota.")
-
-        st.markdown("---")
-
         # 📚 Dettaglio Ore di Presenza per Materia per studente selezionato
         st.subheader("📚 Dettaglio Ore di Presenza per Materia (seleziona uno studente)")
         if 'nome' in df_ore_alunno.columns and 'cognome' in df_ore_alunno.columns and 'materia' in df_ore_alunno.columns and not df_ore_alunno.empty:
@@ -334,7 +320,7 @@ if st.session_state.logged_in:
             df_corso_materie_pulito = df_corso_materie.dropna(subset=['ore_pianificate_monte_ore'])
 
             if not df_corso_materie_pulito.empty:
-                ore_pianificate_per_materia = df_corso_materie_pulito.groupby('materia')['ore_pianificate_monte_ore'].sum().reset_index()
+                ore_pianificate_per_materia = df_corso_materie_pulito.groupby('materia')['ore_pianificate_monte_ore'].sum().reset_index().sort_values(by='ore_pianificate_monte_ore', ascending=False).head(20)
 
                 grafico_pianificate = alt.Chart(ore_pianificate_per_materia).mark_bar().encode(
                     x=alt.X('materia:N', sort='-y', title="Materia"),
