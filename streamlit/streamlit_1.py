@@ -408,36 +408,41 @@ if st.session_state.logged_in:
 
         st.markdown("---")
 
-        # Unisci iscrizioni con ore_alunno (sulla colonna 'idalunno' / 'id_alunno')
         st.subheader("🏫 Voto Medio per Materia per Corso (seleziona un corso)")
 
-# Verifica che le colonne necessarie siano presenti
-        if 'corso' in df_ore_alunno.columns and 'materia' in df_ore_alunno.columns and 'voto_medio' in df_ore_alunno.columns and not df_ore_alunno.empty:
-            df_voti_temp = df_ore_alunno.copy()
+        # Verifica colonne necessarie in entrambe le tabelle
+        if all(col in df_ore_alunno.columns for col in ['id_alunno', 'materia', 'voto_medio']) and \
+        all(col in df_iscrizioni.columns for col in ['idalunno', 'corso']) and \
+        not df_ore_alunno.empty and not df_iscrizioni.empty:
             
-            # Lista dei corsi disponibili
-            corsi_list = df_voti_temp['corso'].dropna().unique().tolist()
-            selected_corso = st.selectbox("Seleziona un corso per vedere i voti medi per materia:", [''] + sorted(corsi_list))
+            # Merge tra le due tabelle sul campo idalunno
+            df_merge = pd.merge(df_ore_alunno, df_iscrizioni, left_on='id_alunno', right_on='idalunno', how='inner')
+
+            # Pulizia valori
+            df_merge['voto_medio'] = pd.to_numeric(df_merge['voto_medio'], errors='coerce')
+            df_merge = df_merge.dropna(subset=['voto_medio', 'materia', 'corso'])
+
+            # Selezione corso
+            corsi_list = sorted(df_merge['corso'].dropna().unique().tolist())
+            selected_corso = st.selectbox("Seleziona un corso:", [''] + corsi_list)
 
             if selected_corso:
-                # Filtro per corso selezionato
-                df_selected_corso = df_voti_temp[df_voti_temp['corso'] == selected_corso].copy()
-                df_selected_corso['voto_medio'] = pd.to_numeric(df_selected_corso['voto_medio'], errors='coerce')
-                df_selected_corso = df_selected_corso.dropna(subset=['voto_medio'])
+                df_filtered = df_merge[df_merge['corso'] == selected_corso]
 
-                # Calcolo media per materia nel corso
-                df_media_materia = df_selected_corso.groupby('materia', as_index=False)['voto_medio'].mean()
+                # Calcolo media per materia
+                df_media = df_filtered.groupby('materia', as_index=False)['voto_medio'].mean()
 
-                if not df_media_materia.empty:
-                    grafico_media_voti = alt.Chart(df_media_materia).mark_bar().encode(
+                if not df_media.empty:
+                    chart = alt.Chart(df_media).mark_bar().encode(
                         x=alt.X('materia:N', title="Materia", sort='-y'),
                         y=alt.Y('voto_medio:Q', title="Voto Medio"),
                         color=alt.Color('materia:N', legend=None),
                         tooltip=['materia', alt.Tooltip('voto_medio', format='.2f')]
                     ).properties(title=f'Voto Medio per Materia - Corso {selected_corso}').interactive()
 
-                    st.altair_chart(grafico_media_voti, use_container_width=True)
+                    st.altair_chart(chart, use_container_width=True)
                 else:
-                    st.info(f"ℹ️ Nessun voto disponibile per il corso {selected_corso}.")
+                    st.info(f"ℹ️ Nessun voto disponibile per il corso '{selected_corso}'.")
         else:
-            st.warning("⚠️ Dati insufficienti nella tabella 'ore_alunno' per costruire il grafico.")
+            st.warning("⚠️ Colonne richieste assenti o dati insufficienti in 'ore_alunno' e 'iscrizioni'.")
+
