@@ -131,14 +131,14 @@ if st.session_state.logged_in:
 
             esiti_count = df_iscrizioni['esitofinale_pulito'].value_counts().reset_index()
             esiti_count.columns = ['Esito Finale', 'Numero Studenti']
-            esiti_count = esiti_count[esiti_count['Esito Finale'] != 'Non definito']  # 🔥 Escludi i non definiti
+            esiti_count = esiti_count[esiti_count['Esito Finale'] != 'Non definito']
             esiti_count = esiti_count.sort_values('Numero Studenti', ascending=False)
 
 
             grafico_esiti = alt.Chart(esiti_count).mark_bar().encode(
                 y=alt.Y('Esito Finale:N', sort='-x', title="Esito Finale"),
                 x=alt.X('Numero Studenti:Q', title="Numero di Studenti"),
-                color=alt.Color('Esito Finale:N', title="Esito Finale"), # Riattivato titolo legenda
+                color=alt.Color('Esito Finale:N', title="Esito Finale"),
                 tooltip=['Esito Finale', 'Numero Studenti']
             ).properties(title='Distribuzione degli esiti finali degli studenti', height=300)
             st.altair_chart(grafico_esiti, use_container_width=True)
@@ -270,6 +270,36 @@ if st.session_state.logged_in:
         st.markdown("### 📘 Dettagli su corsi, ore e docenti")
 
         st.markdown("---")
+
+        st.subheader("📊 Ore di presenza per materia")
+
+        if {'minuti_presenza', 'nome', 'cognome', 'materia'}.issubset(df_ore_alunno.columns):
+            df_ore_alunno['Alunno'] = df_ore_alunno['nome'] + ' ' + df_ore_alunno['cognome']
+            studenti_list = df_ore_alunno['Alunno'].dropna().unique().tolist()
+
+            selected_student = st.selectbox("Seleziona uno studente:", [''] + sorted(studenti_list))
+
+            if selected_student:
+                df_student = df_ore_alunno[df_ore_alunno['Alunno'] == selected_student].copy()
+                df_student['minuti_presenza'] = pd.to_numeric(df_student['minuti_presenza'], errors='coerce')
+                df_student = df_student.dropna(subset=['minuti_presenza'])
+
+                if not df_student.empty:
+                    df_student['ore_presenza'] = df_student['minuti_presenza'] / 60
+
+                    bar_chart = alt.Chart(df_student).mark_bar().encode(
+                        x=alt.X('materia:N', title='Materia'),
+                        y=alt.Y('ore_presenza:Q', title='Ore di Presenza'),
+                        tooltip=['materia', alt.Tooltip('ore_presenza', format='.2f')]
+                    ).properties(title=f'Ore di presenza per materia - {selected_student}').interactive()
+
+                    st.altair_chart(bar_chart, use_container_width=True)
+                else:
+                    st.info(f"Nessun dato valido per {selected_student}.")
+        else:
+            st.warning("⚠️ Colonne necessarie (materia, minuti_presenza, nome, cognome) mancanti.")
+
+
 
         # ⌛ Ore Totali di Presenza per Studente
         st.subheader("⌛ Ore Totali di Presenza per Studente")
