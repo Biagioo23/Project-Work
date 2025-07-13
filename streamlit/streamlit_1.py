@@ -36,7 +36,6 @@ with st.spinner("Caricamento dati dal database..."):
     df_ore_alunno = load_table('ore_alunno')
 
 
-
 # Configura la pagina
 st.set_page_config(page_title="ITS Rizzoli - Dashboard", layout="wide")
 
@@ -92,82 +91,318 @@ if st.session_state.logged_in:
     if role == "governance":
         st.title("📈 Dashboard Governance")
         st.markdown("### 👁️‍🗨️ Overview generale")
-        st.metric("Totale Studenti", len(df_iscrizioni))
-        st.metric("Stage Attivi", len(df_stage))
-        st.metric("Corsi Attivi", len(df_corsi))
-        # Grafico: Distribuzione esiti finali
+
+        # Metriche generali
+        st.metric("Totale Studenti", len(df_iscrizioni) if not df_iscrizioni.empty else 0)
+        st.metric("Stage Attivi", len(df_stage) if not df_stage.empty else 0)
+        st.metric("Corsi Attivi", len(df_corsi) if not df_corsi.empty else 0)
+
+        st.markdown("---")
+
+        # 📊 Distribuzione degli esiti finali
         st.subheader("📊 Distribuzione degli esiti finali")
-        esiti_count = df_iscrizioni['esitofinale'].value_counts().reset_index()
-        esiti_count.columns = ['Esito Finale', 'Numero Studenti']
-        grafico_esiti = alt.Chart(esiti_count).mark_bar().encode(
-            x='Esito Finale:N',
-            y='Numero Studenti:Q',
-            color='Esito Finale:N',
-            tooltip=['Esito Finale', 'Numero Studenti']
-        ).properties(title='Esiti finali degli studenti')
-        st.altair_chart(grafico_esiti, use_container_width=True)
+        if 'esitofinale' in df_iscrizioni.columns and not df_iscrizioni.empty:
+            # Pulizia e normalizzazione dei dati 'esitofinale'
+            df_iscrizioni['esitofinale_pulito'] = df_iscrizioni['esitofinale'].astype(str).str.strip()
+            df_iscrizioni['esitofinale_pulito'].replace('', 'Non definito', inplace=True)
+            df_iscrizioni['esitofinale_pulito'].fillna('Non definito', inplace=True)
 
-        # Grafico: Stage per azienda
+            esiti_count = df_iscrizioni['esitofinale_pulito'].value_counts().reset_index()
+            esiti_count.columns = ['Esito Finale', 'Numero Studenti']
+            esiti_count = esiti_count.sort_values('Numero Studenti', ascending=False)
+
+            grafico_esiti = alt.Chart(esiti_count).mark_bar().encode(
+                y=alt.Y('Esito Finale:N', sort='-x', title="Esito Finale"),
+                x=alt.X('Numero Studenti:Q', title="Numero di Studenti"),
+                color=alt.Color('Esito Finale:N', title="Esito Finale"), # Riattivato titolo legenda
+                tooltip=['Esito Finale', 'Numero Studenti']
+            ).properties(title='Distribuzione degli esiti finali degli studenti', height=300)
+            st.altair_chart(grafico_esiti, use_container_width=True)
+        else:
+            st.warning("⚠️ La colonna 'esitofinale' non è presente o la tabella iscrizioni è vuota.")
+
+        st.markdown("---")
+
+        # 🏢 Distribuzione degli stage per azienda
         st.subheader("🏢 Distribuzione degli stage per azienda")
-        stage_count = df_stage['azienda'].value_counts().reset_index()
-        stage_count.columns = ['Azienda', 'Numero Studenti']
-        grafico_stage = alt.Chart(stage_count).mark_bar().encode(
-            x='Azienda:N',
-            y='Numero Studenti:Q',
-            color='Azienda:N',
-            tooltip=['Azienda', 'Numero Studenti']
-        ).properties(title='Numero di studenti per azienda di stage')
-        st.altair_chart(grafico_stage, use_container_width=True)
+        if 'azienda' in df_stage.columns and not df_stage.empty:
+            stage_count = df_stage['azienda'].value_counts().reset_index()
+            stage_count.columns = ['Azienda', 'Numero Studenti']
+            grafico_stage = alt.Chart(stage_count).mark_bar().encode(
+                x='Azienda:N',
+                y='Numero Studenti:Q',
+                color=alt.Color('Azienda:N', legend=None),
+                tooltip=['Azienda', 'Numero Studenti']
+            ).properties(title='Numero di studenti per azienda di stage').interactive()
+            st.altair_chart(grafico_stage, use_container_width=True)
+        else:
+            st.warning("⚠️ La colonna 'azienda' non è presente o la tabella stage è vuota.")
 
-        # Grafico: Ore lavorate dai docenti
-        st.subheader("👩‍🏫 Ore lavorate dai docenti")
-        grafico_docenti = alt.Chart(df_corso_docenti).mark_bar().encode(
-            x='cognome:N',
-            y='ore_lavorate:Q',
-            color='cognome:N',
-            tooltip=['cognome', 'nome', 'materia', 'ore_lavorate']
-        ).properties(title='Ore lavorate per docente')
-        st.altair_chart(grafico_docenti, use_container_width=True)
+        st.markdown("---")
 
+        # 👩‍🏫 Ore totali lavorate dai docenti (CORRETTO NOME COLONNA 'ore lavoro')
+        st.subheader("👩‍🏫 Ore totali lavorate dai docenti")
+        # Attenzione allo spazio nel nome della colonna 'ore lavoro'
+        if 'ore_lavorate' in df_corso_docenti.columns and not df_corso_docenti.empty:
+            # Assicurati che 'ore lavoro' sia numerico
+            df_corso_docenti['ore_lavorate'] = pd.to_numeric(df_corso_docenti['ore_lavorate'], errors='coerce')
+            df_docenti_pulito = df_corso_docenti.dropna(subset=['ore_lavorate'])
 
-    # Coordinamento: vista tecnica
+            if not df_docenti_pulito.empty:
+                df_docenti_ore_totali = df_docenti_pulito.groupby(['cognome', 'nome'])['ore_lavorate'].sum().reset_index()
+                df_docenti_ore_totali.columns = ['Cognome', 'Nome', 'Ore Totali Lavorate']
+
+                grafico_docenti = alt.Chart(df_docenti_ore_totali).mark_bar().encode(
+                    x=alt.X('Cognome:N', sort='-y', title="Docente"),
+                    y=alt.Y('Ore Totali Lavorate:Q', title="Ore Lavorate"),
+                    color=alt.Color('Cognome:N', legend=None),
+                    tooltip=['Cognome', 'Nome', alt.Tooltip('Ore Totali Lavorate', format='.1f')]
+                ).properties(title='Ore totali lavorate per docente').interactive()
+                st.altair_chart(grafico_docenti, use_container_width=True)
+            else:
+                st.warning("⚠️ Nessun dato numerico valido per le 'ore_lavorate' nella tabella 'corso_docenti'.")
+        else:
+            st.warning("⚠️ La colonna 'ore_lavorate' non è presente in 'corso_docenti' o la tabella è vuota.")
+
+        st.markdown("---")
+
+        # 🥧 Distribuzione studenti per sesso (CORRETTO PULIZIA DATI)
+        st.subheader("🥧 Distribuzione studenti per sesso")
+        if 'sesso' in df_iscrizioni.columns and not df_iscrizioni.empty:
+            # Pulizia e normalizzazione della colonna 'sesso'
+            df_iscrizioni['sesso_pulito'] = df_iscrizioni['sesso'].astype(str).str.upper().str.strip()
+            valid_genders = ['M', 'F']
+            df_iscrizioni.loc[~df_iscrizioni['sesso_pulito'].isin(valid_genders), 'sesso_pulito'] = 'Altro'
+
+            sesso_counts = df_iscrizioni['sesso_pulito'].value_counts()
+
+            if not sesso_counts.empty:
+                labels = sesso_counts.index.tolist()
+                sizes = sesso_counts.values
+                colors = plt.get_cmap('Set2').colors[:len(labels)]
+
+                fig, ax = plt.subplots(figsize=(6, 6)) # Aumenta la dimensione per migliore leggibilità
+                wedges, texts, autotexts = ax.pie(
+                    sizes, labels=labels, autopct='%1.1f%%', startangle=90,
+                    colors=colors, textprops={'fontsize': 12, 'color': 'black'} # Rende il testo nero per contrasto
+                )
+                ax.axis('equal') # Assicura che il grafico a torta sia circolare.
+                plt.setp(autotexts, size=10, weight="bold") # Rende le percentuali in grassetto
+                plt.setp(texts, size=10) # Rende le etichette un po' più piccole
+                st.pyplot(fig)
+            else:
+                st.info("ℹ️ Nessun dato valido per la colonna 'sesso' dopo la pulizia.")
+        else:
+            st.warning("⚠️ La colonna 'sesso' non è presente nella tabella iscrizioni o la tabella è vuota.")
+
+        st.markdown("---")
+
+        # 📚 Studenti iscritti per Corso
+        st.subheader("📚 Studenti iscritti per Corso")
+        if 'corso' in df_iscrizioni.columns and not df_iscrizioni.empty:
+            studenti_per_corso = df_iscrizioni['corso'].value_counts().reset_index()
+            studenti_per_corso.columns = ['Corso', 'Numero Studenti']
+            grafico_studenti_corso = alt.Chart(studenti_per_corso).mark_bar().encode(
+                x=alt.X('Corso:N', sort='-y', title="Corso"),
+                y=alt.Y('Numero Studenti:Q', title="Numero di Studenti"),
+                color=alt.Color('Corso:N', legend=None),
+                tooltip=['Corso', 'Numero Studenti']
+            ).properties(title='Numero di studenti iscritti per corso').interactive()
+            st.altair_chart(grafico_studenti_corso, use_container_width=True)
+        else:
+            st.warning("⚠️ La colonna 'corso' non è presente nella tabella iscrizioni o la tabella è vuota.")
+
+        st.markdown("---")
+
+        # 📉 Percentuale di Studenti Ritirati
+        st.subheader("📉 Percentuale di Studenti Ritirati")
+        if 'ritiratocorso' in df_iscrizioni.columns and not df_iscrizioni.empty:
+            # Converti in booleano e poi a stringa per chiarezza
+            df_iscrizioni['ritiratocorso_pulito'] = df_iscrizioni['ritiratocorso'].astype(bool).map({True: 'Ritirati', False: 'Non Ritirati'})
+            ritirati_counts = df_iscrizioni['ritiratocorso_pulito'].value_counts()
+
+            if not ritirati_counts.empty:
+                labels_ritirati = ritirati_counts.index.tolist()
+                sizes_ritirati = ritirati_counts.values
+                colors_ritirati = ['#FF9999', '#66B2FF'] # Colori per Ritirati e Non Ritirati
+
+                fig_ritirati, ax_ritirati = plt.subplots(figsize=(6, 6))
+                wedges_ritirati, texts_ritirati, autotexts_ritirati = ax_ritirati.pie(
+                    sizes_ritirati, labels=labels_ritirati, autopct='%1.1f%%', startangle=90,
+                    colors=colors_ritirati, textprops={'fontsize': 12, 'color': 'black'}
+                )
+                ax_ritirati.axis('equal')
+                plt.setp(autotexts_ritirati, size=10, weight="bold")
+                plt.setp(texts_ritirati, size=10)
+                st.pyplot(fig_ritirati)
+            else:
+                st.info("ℹ️ Nessun dato sui ritiri degli studenti disponibile o valori inattesi nella colonna 'ritiratocorso'.")
+        else:
+            st.warning("⚠️ La colonna 'ritiratocorso' non è presente nella tabella iscrizioni o la tabella è vuota.")
+
+    # --- Dashboard Coordinamento Didattico ---
     elif role == "coordinamento":
         st.title("🧰 Dashboard Coordinamento Didattico")
         st.markdown("### 📘 Dettagli su corsi, ore e docenti")
-        
-        st.subheader("Ore frequentate per studente")
-        df_ore_alunno['ore_presenza'] = df_ore_alunno['minuti_presenza'] / 60
-        grafico_ore = alt.Chart(df_ore_alunno).mark_bar().encode(
-            x='materia:N',
-            y='ore_presenza:Q',
-            color='materia:N',
-            tooltip=['nome', 'cognome', 'materia', 'ore_presenza']
-        ).properties(title='Ore di presenza per materia')
-        st.altair_chart(grafico_ore, use_container_width=True)
 
+        st.markdown("---")
+
+        # ⌛ Ore Totali di Presenza per Studente
+        st.subheader("⌛ Ore Totali di Presenza per Studente")
+        if 'minuti_presenza' in df_ore_alunno.columns and not df_ore_alunno.empty:
+            df_ore_alunno['minuti_presenza'] = pd.to_numeric(df_ore_alunno['minuti_presenza'], errors='coerce')
+            df_ore_alunno_pulito = df_ore_alunno.dropna(subset=['minuti_presenza'])
+
+            if not df_ore_alunno_pulito.empty:
+                df_ore_alunno_pulito['ore_presenza_totali'] = df_ore_alunno_pulito['minuti_presenza'] / 60
+                ore_totali_per_alunno = df_ore_alunno_pulito.groupby(['id_alunno', 'nome', 'cognome'])['ore_presenza_totali'].sum().reset_index()
+                ore_totali_per_alunno['Alunno'] = ore_totali_per_alunno['nome'] + ' ' + ore_totali_per_alunno['cognome']
+
+                grafico_ore_alunno_totali = alt.Chart(ore_totali_per_alunno).mark_bar().encode(
+                    x=alt.X('Alunno:N', sort='-y', title="Studente"),
+                    y=alt.Y('ore_presenza_totali:Q', title="Ore totali di presenza"),
+                    color=alt.Color('Alunno:N', legend=None),
+                    tooltip=['Alunno', alt.Tooltip('ore_presenza_totali', format='.2f')]
+                ).properties(title='Ore totali di presenza per studente').interactive()
+                st.altair_chart(grafico_ore_alunno_totali, use_container_width=True)
+            else:
+                st.warning("⚠️ Nessun dato valido per il calcolo delle ore di presenza in 'ore_alunno'.")
+        else:
+            st.warning("⚠️ Colonne necessarie (minuti_presenza, nome, cognome) non trovate in ore_alunno o la tabella è vuota.")
+
+        st.markdown("---")
+
+        # 📚 Dettaglio Ore di Presenza per Materia per studente selezionato
+        st.subheader("📚 Dettaglio Ore di Presenza per Materia (seleziona uno studente)")
+        if 'nome' in df_ore_alunno.columns and 'cognome' in df_ore_alunno.columns and 'materia' in df_ore_alunno.columns and not df_ore_alunno.empty:
+            df_ore_alunno_temp = df_ore_alunno.copy()
+            df_ore_alunno_temp['Alunno'] = df_ore_alunno_temp['nome'] + ' ' + df_ore_alunno_temp['cognome']
+            studenti_list = df_ore_alunno_temp['Alunno'].unique().tolist()
+
+            selected_student = st.selectbox("Seleziona uno studente per vedere il dettaglio delle ore per materia:", [''] + sorted(studenti_list))
+
+            if selected_student:
+                df_selected_student = df_ore_alunno_temp[df_ore_alunno_temp['Alunno'] == selected_student].copy()
+                df_selected_student['minuti_presenza'] = pd.to_numeric(df_selected_student['minuti_presenza'], errors='coerce')
+                df_selected_student = df_selected_student.dropna(subset=['minuti_presenza'])
+
+                if not df_selected_student.empty:
+                    df_selected_student['ore_presenza'] = df_selected_student['minuti_presenza'] / 60
+
+                    grafico_ore_materia_singolo = alt.Chart(df_selected_student).mark_bar().encode(
+                        x=alt.X('materia:N', title="Materia", sort='-y'),
+                        y=alt.Y('ore_presenza:Q', title="Ore di Presenza"),
+                        color=alt.Color('materia:N', legend=None),
+                        tooltip=['materia', alt.Tooltip('ore_presenza', format='.2f')]
+                    ).properties(title=f'Ore di Presenza di {selected_student} per Materia').interactive()
+                    st.altair_chart(grafico_ore_materia_singolo, use_container_width=True)
+                else:
+                    st.info(f"ℹ️ Nessun dato valido per le ore di presenza di {selected_student}.")
+        else:
+            st.warning("⚠️ Dati insufficienti in 'ore_alunno' per visualizzare il dettaglio delle ore per materia o la tabella è vuota.")
+
+        st.markdown("---")
+
+        # Materie con più ore pianificate
         st.subheader("Materie con più ore pianificate")
-        grafico_pianificate = alt.Chart(df_corso_materie).mark_bar().encode(
-            x='materia:N',
-            y='ore_pianificate_monte_ore:Q',
-            color='materia:N',
-            tooltip=['materia', 'ore_pianificate_monte_ore']
-        ).properties(title='Ore pianificate da piano ITS per materia')
-        st.altair_chart(grafico_pianificate, use_container_width=True)
+        if 'materia' in df_corso_materie.columns and 'ore_pianificate_monte_ore' in df_corso_materie.columns and not df_corso_materie.empty:
+            df_corso_materie['ore_pianificate_monte_ore'] = pd.to_numeric(df_corso_materie['ore_pianificate_monte_ore'], errors='coerce')
+            df_corso_materie_pulito = df_corso_materie.dropna(subset=['ore_pianificate_monte_ore'])
 
-        st.subheader("Stage per mese")
-        st.subheader("🗓️ Stage per mese")
-        df_stage['mese_inizio'] = pd.to_datetime(df_stage['datainiziostage']).dt.to_period('M')
-        stage_mese = df_stage['mese_inizio'].value_counts().sort_index().reset_index()
-        stage_mese.columns = ['Mese', 'Numero Stage']
-        grafico_stage_mese = alt.Chart(stage_mese).mark_bar().encode(
-            x='Mese:N',
-            y='Numero Stage:Q',
-            tooltip=['Mese', 'Numero Stage']
-        ).properties(title='Distribuzione degli stage per mese')
-        st.altair_chart(grafico_stage_mese, use_container_width=True)
+            if not df_corso_materie_pulito.empty:
+                ore_pianificate_per_materia = df_corso_materie_pulito.groupby('materia')['ore_pianificate_monte_ore'].sum().reset_index()
 
+                grafico_pianificate = alt.Chart(ore_pianificate_per_materia).mark_bar().encode(
+                    x=alt.X('materia:N', sort='-y', title="Materia"),
+                    y=alt.Y('ore_pianificate_monte_ore:Q', title="Ore pianificate"),
+                    color=alt.Color('materia:N', legend=None),
+                    tooltip=['materia', alt.Tooltip('ore_pianificate_monte_ore', format='.1f')]
+                ).properties(title='Ore pianificate da piano ITS per materia').interactive()
+                st.altair_chart(grafico_pianificate, use_container_width=True)
+            else:
+                st.warning("⚠️ Nessun dato numerico valido per le ore pianificate in 'corso_materie_its'.")
+        else:
+            st.warning("⚠️ Colonne necessarie (materia, ore_pianificate_monte_ore) non trovate in corso_materie_its o la tabella è vuota.")
+
+        st.markdown("---")
+
+        # 🗓️ Distribuzione degli stage per mese di inizio
+        st.subheader("🗓️ Distribuzione degli stage per mese di inizio")
+        if 'datainiziostage' in df_stage.columns and not df_stage.empty:
+            df_stage['datainiziostage'] = pd.to_datetime(df_stage['datainiziostage'], errors='coerce')
+            df_stage_pulito = df_stage.dropna(subset=['datainiziostage'])
+
+            if not df_stage_pulito.empty:
+                df_stage_pulito['mese_inizio_nome'] = df_stage_pulito['datainiziostage'].dt.strftime('%Y-%m') # Formato 'YYYY-MM' per ordinamento corretto
+                stage_mese = df_stage_pulito['mese_inizio_nome'].value_counts().sort_index().reset_index()
+                stage_mese.columns = ['Mese', 'Numero Stage']
+                grafico_stage_mese = alt.Chart(stage_mese).mark_bar().encode(
+                    x=alt.X('Mese:N', sort='x', title="Mese di Inizio Stage"),
+                    y=alt.Y('Numero Stage:Q', title="Numero di Stage"),
+                    tooltip=['Mese', 'Numero Stage']
+                ).properties(title='Distribuzione degli stage per mese di inizio').interactive()
+                st.altair_chart(grafico_stage_mese, use_container_width=True)
+            else:
+                st.warning("⚠️ Nessun dato valido per le date di inizio stage nella tabella stage.")
+        else:
+            st.warning("⚠️ La colonna 'datainiziostage' non è presente nella tabella stage o la tabella è vuota.")
+
+        st.markdown("---")
+
+        # Assegnazione Docenti - Corsi (DataFrame)
         st.subheader("Assegnazione Docenti - Corsi")
-        st.dataframe(df_corso_docenti)
+        if not df_corso_docenti.empty:
+            st.dataframe(df_corso_docenti)
+        else:
+            st.info("ℹ️ La tabella 'corso_docenti' è vuota.")
+
+        st.markdown("---")
+
+        # 📊 Confronto Ore Effettuate vs. Pianificate per Materia
+        st.subheader("📊 Confronto Ore Effettuate vs. Pianificate per Materia")
+        if all(col in df_corso_materie.columns for col in ['materia', 'ore_effettuate', 'ore_pianificate']) and not df_corso_materie.empty:
+            df_corso_materie['ore_effettuate'] = pd.to_numeric(df_corso_materie['ore_effettuate'], errors='coerce')
+            df_corso_materie['ore_pianificate'] = pd.to_numeric(df_corso_materie['ore_pianificate'], errors='coerce')
+            df_corso_materie_pulito = df_corso_materie.dropna(subset=['ore_effettuate', 'ore_pianificate'])
+
+            if not df_corso_materie_pulito.empty:
+                ore_materia = df_corso_materie_pulito.groupby('materia')[['ore_effettuate', 'ore_pianificate']].sum().reset_index()
+                ore_materia_long = ore_materia.melt('materia', var_name='Tipo Ore', value_name='Ore')
+
+                grafico_confronto_ore = alt.Chart(ore_materia_long).mark_bar().encode(
+                    x=alt.X('materia:N', title="Materia", sort='-y'),
+                    y=alt.Y('Ore:Q', title="Numero di Ore"),
+                    color='Tipo Ore:N',
+                    column=alt.Column('Tipo Ore:N', header=alt.Header(titleOrient="bottom", labelOrient="bottom")),
+                    tooltip=['materia', 'Tipo Ore', alt.Tooltip('Ore', format='.1f')]
+                ).properties(title='Confronto Ore Effettuate vs. Pianificate per Materia').interactive()
+                st.altair_chart(grafico_confronto_ore, use_container_width=True)
+            else:
+                st.warning("⚠️ Nessun dato valido per il confronto delle ore in 'corso_materie_its'.")
+        else:
+            st.warning("⚠️ Colonne necessarie (materia, ore_effettuate, ore_pianificate) non trovate in corso_materie_its o la tabella è vuota.")
+
+        st.markdown("---")
+
+        # ⭐ Voto Medio degli Studenti per Materia
+        st.subheader("⭐ Voto Medio degli Studenti per Materia")
+        if 'voto_medio' in df_ore_alunno.columns and 'materia' in df_ore_alunno.columns and not df_ore_alunno.empty:
+            df_ore_alunno['voto_medio'] = pd.to_numeric(df_ore_alunno['voto_medio'], errors='coerce')
+            df_ore_alunno_pulito = df_ore_alunno.dropna(subset=['voto_medio'])
+
+            if not df_ore_alunno_pulito.empty:
+                voto_medio_per_materia = df_ore_alunno_pulito.groupby('materia')['voto_medio'].mean().reset_index()
+                grafico_voto_medio = alt.Chart(voto_medio_per_materia).mark_bar().encode(
+                    x=alt.X('materia:N', sort='-y', title="Materia"),
+                    y=alt.Y('voto_medio:Q', title="Voto Medio"),
+                    color=alt.Color('materia:N', legend=None),
+                    tooltip=['materia', alt.Tooltip('voto_medio', format='.2f')]
+                ).properties(title='Voto medio degli studenti per materia').interactive()
+                st.altair_chart(grafico_voto_medio, use_container_width=True)
+            else:
+                st.info("ℹ️ Nessun dato valido per il calcolo del voto medio per materia.")
+        else:
+            st.warning("⚠️ Colonne necessarie (voto_medio, materia) non trovate in ore_alunno o la tabella è vuota.")
 
     else:
         st.error("Ruolo non riconosciuto.")
