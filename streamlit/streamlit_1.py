@@ -99,6 +99,8 @@ def logout():
     st.session_state.photo = None
     st.rerun()
 
+login()
+
 # Dashboard principale
 if st.session_state.logged_in:
     role = st.session_state.role
