@@ -364,18 +364,29 @@ if st.session_state.logged_in:
         df_selezionato = df_unito[['id_utente', 'cognome', 'nome', 'materia', 'corso', 'monte_ore', 'ore_lavorate']]
         st.subheader("Assegnazione Docenti - Materia")
         if not df_selezionato.empty:
-            search_query = st.text_input("🔍 Cerca per nome, corso o materia")
+            col1, col2, col3, col4 = st.columns(4)
+    
+            with col1:
+                filtro_nome = st.text_input("Filtra per Nome")
+            with col2:
+                filtro_cognome = st.text_input("Filtra per Cognome")
+            with col3:
+                filtro_materia = st.text_input("Filtra per Materia")
+            with col4:
+                filtro_corso = st.text_input("Filtra per Corso")
 
-            if search_query:
-                mask = (
-                    df_selezionato['nome'].str.contains(search_query, case=False, na=False) |
-                    df_selezionato['cognome'].str.contains(search_query, case=False, na=False) |
-                    df_selezionato['materia'].str.contains(search_query, case=False, na=False) |
-                    df_selezionato['corso'].str.contains(search_query, case=False, na=False)
-                )
-                df_filtrato = df_selezionato[mask]
-            else:
-                df_filtrato = df_selezionato
+            # Applica i filtri
+            df_filtrato = df_selezionato.copy()
+
+            if filtro_nome:
+                df_filtrato = df_filtrato[df_filtrato['nome'].str.contains(filtro_nome, case=False, na=False)]
+            if filtro_cognome:
+                df_filtrato = df_filtrato[df_filtrato['cognome'].str.contains(filtro_cognome, case=False, na=False)]
+            if filtro_materia:
+                df_filtrato = df_filtrato[df_filtrato['materia'].str.contains(filtro_materia, case=False, na=False)]
+            if filtro_corso:
+                df_filtrato = df_filtrato[df_filtrato['corso'].str.contains(filtro_corso, case=False, na=False)]
+
             st.dataframe(df_selezionato)
         else:
             st.info("ℹ️ La tabella 'corso_docenti' è vuota.")
