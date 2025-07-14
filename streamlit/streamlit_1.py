@@ -198,15 +198,36 @@ if st.session_state.logged_in:
 
         st.markdown("---")
 
-        df_iscrizioni['anno_nascita'] = pd.to_datetime(df_iscrizioni['datanascita'], errors='coerce').dt.year
-        studenti_per_anno = df_iscrizioni['anno_nascita'].value_counts().sort_index()
-        df_plot = studenti_per_anno.reset_index()
-        df_plot.columns = ['Anno di Nascita', 'Numero Studenti']
+        st.subheader("Distribuzione degli studenti per anno di nascita")
 
-        fig = px.bar(df_plot, x='Anno di Nascita', y='Numero Studenti',
-                    title='Distribuzione Studenti per Anno di Nascita')
+        if 'datanascita' in df_iscrizioni.columns and not df_iscrizioni.empty:
+            # Estrai l'anno dalla colonna datanascita
+            df_iscrizioni['anno_nascita'] = pd.to_datetime(df_iscrizioni['datanascita'], errors='coerce').dt.year
 
-        st.plotly_chart(fig)
+            # Rimuove eventuali valori nulli
+            anni_validi = df_iscrizioni.dropna(subset=['anno_nascita'])
+            anni_validi = anni_validi[anni_validi['anno_nascita'] < 2024]
+
+            # Conta il numero di studenti per anno
+            studenti_per_anno = anni_validi['anno_nascita'].value_counts().reset_index()
+            studenti_per_anno.columns = ['Anno di Nascita', 'Numero Studenti']
+            studenti_per_anno = studenti_per_anno.sort_values('Anno di Nascita')
+
+            # Crea il grafico
+            grafico_anni = alt.Chart(studenti_per_anno).mark_bar().encode(
+                x=alt.X('Anno di Nascita:O', sort=None, title="Anno di Nascita"),
+                y=alt.Y('Numero Studenti:Q', title="Numero di Studenti"),
+                color=alt.Color('Anno di Nascita:O', legend=None),
+                tooltip=['Anno di Nascita', 'Numero Studenti']
+            ).properties(
+                title='Distribuzione degli studenti per anno di nascita',
+                height=300
+            )
+
+            st.altair_chart(grafico_anni, use_container_width=True)
+        else:
+            st.warning("⚠️ La colonna 'datanascita' non è presente o la tabella iscrizioni è vuota.")
+
 
         st.markdown("---")
 
