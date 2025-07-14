@@ -258,7 +258,7 @@ if st.session_state.logged_in:
                 plt.setp(autotexts, size=10, weight="bold")
                 plt.setp(texts, size=10)
                 plt.tight_layout()
-                st.pyplot(fig)
+                st.pyplot(fig, clear_figure=True, use_container_width=False)
             else:
                 st.info("ℹ️ Nessun dato valido per 'M' o 'F' nella colonna 'sesso'.")
         else:
