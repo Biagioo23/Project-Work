@@ -364,32 +364,33 @@ if st.session_state.logged_in:
         df_selezionato = df_unito[['id_utente', 'cognome', 'nome', 'materia', 'corso', 'monte_ore', 'ore_lavorate']]
         st.subheader("Assegnazione Docenti - Materia")
         if not df_selezionato.empty:
+            df_filtrato = df_selezionato.copy()
             col1, col2, col3, col4 = st.columns(4)
     
             with col1:
-                filtro_nome = st.text_input("Filtra per Nome")
+                nome_opzione = st.selectbox("Seleziona Nome", options=["Tutti"] + sorted(df_filtrato['nome'].dropna().unique().tolist()))
             with col2:
-                filtro_cognome = st.text_input("Filtra per Cognome")
+                cognome_opzione = st.selectbox("Seleziona Cognome", options=["Tutti"] + sorted(df_filtrato['cognome'].dropna().unique().tolist()))
             with col3:
-                filtro_materia = st.text_input("Filtra per Materia")
+                materia_opzione = st.selectbox("Seleziona Materia", options=["Tutti"] + sorted(df_filtrato['materia'].dropna().unique().tolist()))
             with col4:
-                filtro_corso = st.text_input("Filtra per Corso")
+                corso_opzione = st.selectbox("Seleziona Corso", options=["Tutti"] + sorted(df_filtrato['corso'].dropna().unique().tolist()))
 
-            # Applica i filtri
-            df_filtrato = df_selezionato.copy()
+            # Applica i filtri solo se non è selezionato "Tutti"
+            if nome_opzione != "Tutti":
+                df_filtrato = df_filtrato[df_filtrato["nome"] == nome_opzione]
+            if cognome_opzione != "Tutti":
+                df_filtrato = df_filtrato[df_filtrato["cognome"] == cognome_opzione]
+            if materia_opzione != "Tutti":
+                df_filtrato = df_filtrato[df_filtrato["materia"] == materia_opzione]
+            if corso_opzione != "Tutti":
+                df_filtrato = df_filtrato[df_filtrato["corso"] == corso_opzione]
 
-            if filtro_nome:
-                df_filtrato = df_filtrato[df_filtrato['nome'].str.contains(filtro_nome, case=False, na=False)]
-            if filtro_cognome:
-                df_filtrato = df_filtrato[df_filtrato['cognome'].str.contains(filtro_cognome, case=False, na=False)]
-            if filtro_materia:
-                df_filtrato = df_filtrato[df_filtrato['materia'].str.contains(filtro_materia, case=False, na=False)]
-            if filtro_corso:
-                df_filtrato = df_filtrato[df_filtrato['corso'].str.contains(filtro_corso, case=False, na=False)]
+            # Mostra tabella
+            st.dataframe(df_filtrato)
 
-            st.dataframe(df_selezionato)
         else:
-            st.info("ℹ️ La tabella 'corso_docenti' è vuota.")
+            st.info("ℹ️ La tabella 'selezionato' è vuota.")
 
         st.markdown("---")
 
