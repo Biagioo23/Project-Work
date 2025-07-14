@@ -361,7 +361,7 @@ if st.session_state.logged_in:
 
         # Assegnazione Docenti - Corsi (DataFrame)
         df_unito = pd.merge(df_corso_docenti, df_corsi, on='idcorsoanno', how='inner')
-        print(df_unito.columns.tolist())
+        st.write(df_unito.head())
         df_selezionato = df_unito[['id_utente', 'cognome', 'nome', 'materia', 'corsi', 'monte_ore', 'ore_lavorate']]
         st.subheader("Assegnazione Docenti - Materia")
         if not df_corso_docenti.empty:
