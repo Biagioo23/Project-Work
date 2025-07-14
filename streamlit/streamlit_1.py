@@ -382,11 +382,12 @@ if st.session_state.logged_in:
             df_stage_pulito = df_stage.dropna(subset=['datainiziostage'])
 
             if not df_stage_pulito.empty:
-                df_stage_pulito['mese_inizio_nome'] = df_stage_pulito['datainiziostage'].dt.strftime('%Y-%m')  # 'YYYY-MM'
-                stage_mese = df_stage_pulito['mese_inizio_nome'].value_counts().sort_index().reset_index()
-                stage_mese.columns = ['Mese', 'Numero Stage']
+                df_stage_pulito['anno_inizio'] = df_stage_pulito['datainiziostage'].dt.year
+                stage_anno = df_stage_pulito['anno_inizio'].value_counts().sort_index().reset_index()
+                stage_anno.columns = ['Anno', 'Numero Stage']
 
-                grafico_stage_mese = alt.Chart(stage_mese).mark_line(point=True).encode(
+
+                grafico_stage_mese = alt.Chart(stage_anno).mark_line(point=True).encode(
                     x=alt.X('Mese:N', sort='x', title="Mese di Inizio Stage"),
                     y=alt.Y('Numero Stage:Q', title="Numero di Stage"),
                     tooltip=['Mese', 'Numero Stage']
