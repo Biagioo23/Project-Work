@@ -77,7 +77,7 @@ def login():
     if not st.session_state.logged_in:
         mostra_logo()
         with st.form("login"):
-            st.title("🔐 Login")
+            st.title("Login")
             username = st.text_input("Username")
             password = st.text_input("Password", type="password")
             submitted = st.form_submit_button("Accedi")
@@ -106,12 +106,12 @@ if st.session_state.logged_in:
     role = st.session_state.role
     st.sidebar.markdown(f"👤 **Ruolo:** {role.capitalize()}")
 
-    if st.sidebar.button("🔓 Logout"):
+    if st.sidebar.button("**Logout**"):
         logout()
 
     # Governance: vista aggregata
     if role == "governance":
-        st.title("📈 Dashboard Governance")
+        st.title("Dashboard Governance")
         st.markdown("### 👁️‍🗨️ Overview generale")
 
         # Metriche generali
@@ -122,7 +122,7 @@ if st.session_state.logged_in:
         st.markdown("---")
 
         # 📊 Distribuzione degli esiti finali
-        st.subheader("📊 Distribuzione degli esiti finali")
+        st.subheader("Distribuzione degli esiti finali")
         if 'esitofinale' in df_iscrizioni.columns and not df_iscrizioni.empty:
             # Pulizia e normalizzazione dei dati 'esitofinale'
             df_iscrizioni['esitofinale_pulito'] = df_iscrizioni['esitofinale'].astype(str).str.strip()
@@ -148,7 +148,7 @@ if st.session_state.logged_in:
         st.markdown("---")
 
         # 🏢 Distribuzione degli stage per azienda
-        st.subheader("🏢 Distribuzione degli stage per azienda")
+        st.subheader("Distribuzione degli stage per azienda")
 
         if 'azienda' in df_stage.columns and not df_stage.empty:
             stage_count = df_stage['azienda'].value_counts().reset_index()
@@ -172,7 +172,7 @@ if st.session_state.logged_in:
         st.markdown("---")
 
         # 👩‍🏫 Ore totali lavorate dai docenti (CORRETTO NOME COLONNA 'ore lavoro')
-        st.subheader("👩‍🏫 Ore totali lavorate dai docenti")
+        st.subheader("Ore totali lavorate dai docenti")
         # Attenzione allo spazio nel nome della colonna 'ore lavoro'
         if 'ore_lavorate' in df_corso_docenti.columns and not df_corso_docenti.empty:
             # Assicurati che 'ore lavoro' sia numerico
@@ -198,7 +198,7 @@ if st.session_state.logged_in:
         st.markdown("---")
 
         # 🥧 Distribuzione studenti per sesso (CORRETTO PULIZIA DATI)
-        st.subheader("🥧 Distribuzione studenti per sesso")
+        st.subheader("Distribuzione studenti per sesso")
 
         if 'sesso' in df_iscrizioni.columns and not df_iscrizioni.empty:
             # Pulizia e normalizzazione della colonna 'sesso'
@@ -233,7 +233,7 @@ if st.session_state.logged_in:
         st.markdown("---")
 
         # 📚 Studenti iscritti per Corso
-        st.subheader("📚 Studenti iscritti per Corso")
+        st.subheader("Studenti iscritti per Corso")
         if 'corso' in df_iscrizioni.columns and not df_iscrizioni.empty:
             studenti_per_corso = df_iscrizioni['corso'].value_counts().reset_index()
             studenti_per_corso.columns = ['Corso', 'Numero Studenti']
@@ -250,7 +250,7 @@ if st.session_state.logged_in:
         st.markdown("---")
 
         # 📉 Percentuale di Studenti Ritirati
-        st.subheader("📉 Percentuale di Studenti Ritirati")
+        st.subheader("Percentuale di Studenti Ritirati")
         if 'ritiratocorso' in df_iscrizioni.columns and not df_iscrizioni.empty:
             # Converti in booleano e poi a stringa per chiarezza
             df_iscrizioni['ritiratocorso_pulito'] = df_iscrizioni['ritiratocorso'].astype(bool).map({True: 'Ritirati', False: 'Non Ritirati'})
@@ -277,13 +277,13 @@ if st.session_state.logged_in:
 
     # --- Dashboard Coordinamento Didattico ---
     elif role == "coordinamento":
-        st.title("🧰 Dashboard Coordinamento Didattico")
-        st.markdown("### 📘 Dettagli su corsi, ore e docenti")
+        st.title("**Dashboard Coordinamento Didattico**")
+        st.markdown("### Dettagli su corsi, ore e docenti")
 
         st.markdown("---")
 
         # 📚 Dettaglio Ore di Presenza per Materia per studente selezionato
-        st.subheader("📚 Dettaglio Ore di Presenza per Materia (seleziona uno studente)")
+        st.subheader("Dettaglio Ore di Presenza per Materia (seleziona uno studente)")
         if 'nome' in df_ore_alunno.columns and 'cognome' in df_ore_alunno.columns and 'materia' in df_ore_alunno.columns and not df_ore_alunno.empty:
             df_ore_alunno_temp = df_ore_alunno.copy()
             df_ore_alunno_temp['Alunno'] = df_ore_alunno_temp['nome'] + ' ' + df_ore_alunno_temp['cognome']
@@ -337,7 +337,7 @@ if st.session_state.logged_in:
         st.markdown("---")
 
         # 🗓️ Distribuzione degli stage per mese di inizio
-        st.subheader("🗓️ Distribuzione degli stage per mese di inizio")
+        st.subheader("Distribuzione degli stage per mese di inizio")
         if 'datainiziostage' in df_stage.columns and not df_stage.empty:
             df_stage['datainiziostage'] = pd.to_datetime(df_stage['datainiziostage'], errors='coerce')
             df_stage_pulito = df_stage.dropna(subset=['datainiziostage'])
@@ -360,7 +360,7 @@ if st.session_state.logged_in:
         st.markdown("---")
 
         # Assegnazione Docenti - Corsi (DataFrame)
-        st.subheader("Assegnazione Docenti - Corsi")
+        st.subheader("Assegnazione Docenti - Materia")
         if not df_corso_docenti.empty:
             st.dataframe(df_corso_docenti)
         else:
@@ -369,7 +369,7 @@ if st.session_state.logged_in:
         st.markdown("---")
 
         # 📊 Confronto Ore Effettuate vs. Pianificate per Materia
-        st.subheader("📊 Confronto Ore Effettuate vs. Pianificate per Materia")
+        st.subheader("Confronto Ore Effettuate vs. Pianificate per Materia")
         if all(col in df_corso_materie.columns for col in ['materia', 'ore_effettuate', 'ore_pianificate']) and not df_corso_materie.empty:
             df_corso_materie['ore_effettuate'] = pd.to_numeric(df_corso_materie['ore_effettuate'], errors='coerce')
             df_corso_materie['ore_pianificate'] = pd.to_numeric(df_corso_materie['ore_pianificate'], errors='coerce')
@@ -394,7 +394,7 @@ if st.session_state.logged_in:
 
         st.markdown("---")
 
-        st.subheader("🏫 Voto Medio per Materia per Corso (seleziona un corso)")
+        st.subheader("Voto Medio per Materia per Corso (seleziona un corso)")
 
         # Verifica colonne necessarie in entrambe le tabelle
         if all(col in df_ore_alunno.columns for col in ['id_alunno', 'materia', 'voto_medio']) and \
