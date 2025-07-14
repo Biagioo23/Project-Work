@@ -161,7 +161,7 @@ if st.session_state.logged_in:
             grafico_stage = alt.Chart(top_aziende).mark_bar().encode(
                 x=alt.X('Azienda:N', sort=alt.EncodingSortField(field='Numero Studenti', order='descending')),
                 y='Numero Studenti:Q',
-                color=alt.Color('Azienda:N', legend=None),
+                color=alt.Color('Azienda:N', scale=alt.Scale(scheme='reds'), legend=None),
                 tooltip=['Azienda', 'Numero Studenti']
             ).properties(title='Top 20 aziende per numero di studenti in stage').interactive()
 
