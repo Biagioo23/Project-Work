@@ -118,8 +118,8 @@ if st.session_state.logged_in:
 
         # Metriche generali
         st.metric("Totale Studenti", len(df_iscrizioni) if not df_iscrizioni.empty else 0)
-        st.metric("Stage Attivi", len(df_stage) if not df_stage.empty else 0)
-        st.metric("Corsi Attivi", len(df_corsi) if not df_corsi.empty else 0)
+        st.metric("Stage Totali", len(df_stage) if not df_stage.empty else 0)
+        st.metric("Corsi Totali", len(df_corsi) if not df_corsi.empty else 0)
 
         st.markdown("---")
 
