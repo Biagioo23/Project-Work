@@ -382,18 +382,18 @@ if st.session_state.logged_in:
             df_stage_pulito = df_stage.dropna(subset=['datainiziostage'])
 
             if not df_stage_pulito.empty:
-                df_stage_pulito['anno_inizio'] = df_stage_pulito['datainiziostage'].dt.year
+                df_stage_pulito['anno_inizio'] = df_stage_pulito['datainiziostage'].dt.year.astype(str)
                 stage_anno = df_stage_pulito['anno_inizio'].value_counts().sort_index().reset_index()
                 stage_anno.columns = ['Anno', 'Numero Stage']
 
 
-                grafico_stage_mese = alt.Chart(stage_anno).mark_line(point=True).encode(
-                    x=alt.X('Mese:N', sort='x', title="Mese di Inizio Stage"),
+                grafico_stage_anno = alt.Chart(stage_anno).mark_line(point=True).encode(
+                    x=alt.X('Anno:O', sort='ascending', title="Anno di Inizio Stage"),
                     y=alt.Y('Numero Stage:Q', title="Numero di Stage"),
-                    tooltip=['Mese', 'Numero Stage']
-                ).properties(title='Distribuzione degli stage per mese di inizio').interactive()
+                    tooltip=['Anno', 'Numero Stage']
+                ).properties(title='Distribuzione degli stage per anno di inizio').interactive()
 
-                st.altair_chart(grafico_stage_mese, use_container_width=True)
+                st.altair_chart(grafico_stage_anno, use_container_width=True)
             else:
                 st.warning("⚠️ Nessun dato valido per le date di inizio stage nella tabella stage.")
         else:
