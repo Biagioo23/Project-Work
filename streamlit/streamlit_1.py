@@ -363,7 +363,19 @@ if st.session_state.logged_in:
         df_unito = pd.merge(df_corso_docenti, df_corsi, on='idcorsoanno', how='inner')
         df_selezionato = df_unito[['id_utente', 'cognome', 'nome', 'materia', 'corso', 'monte_ore', 'ore_lavorate']]
         st.subheader("Assegnazione Docenti - Materia")
-        if not df_corso_docenti.empty:
+        if not df_selezionato.empty:
+            search_query = st.text_input("🔍 Cerca per nome, corso o materia")
+
+            if search_query:
+                mask = (
+                    df_selezionato['nome'].str.contains(search_query, case=False, na=False) |
+                    df_selezionato['cognome'].str.contains(search_query, case=False, na=False) |
+                    df_selezionato['materia'].str.contains(search_query, case=False, na=False) |
+                    df_selezionato['corso'].str.contains(search_query, case=False, na=False)
+                )
+                df_filtrato = df_selezionato[mask]
+            else:
+                df_filtrato = df_selezionato
             st.dataframe(df_selezionato)
         else:
             st.info("ℹ️ La tabella 'corso_docenti' è vuota.")
