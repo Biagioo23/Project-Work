@@ -249,7 +249,7 @@ if st.session_state.logged_in:
                 sizes = sesso_counts.values
                 colors = plt.get_cmap('Set2').colors[:len(labels)]
 
-                fig, ax = plt.subplots(figsize=(6, 6))
+                fig, ax = plt.subplots(figsize=(4, 4))
                 wedges, texts, autotexts = ax.pie(
                     sizes, labels=labels, autopct='%1.1f%%', startangle=90,
                     colors=colors, textprops={'fontsize': 12, 'color': 'black'}
@@ -257,6 +257,7 @@ if st.session_state.logged_in:
                 ax.axis('equal')
                 plt.setp(autotexts, size=10, weight="bold")
                 plt.setp(texts, size=10)
+                plt.tight_layout()
                 st.pyplot(fig)
             else:
                 st.info("ℹ️ Nessun dato valido per 'M' o 'F' nella colonna 'sesso'.")
