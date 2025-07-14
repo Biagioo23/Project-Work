@@ -185,9 +185,9 @@ if st.session_state.logged_in:
                 df_docenti_ore_totali.columns = ['Cognome', 'Nome', 'Ore Totali Lavorate']
 
                 grafico_docenti = alt.Chart(df_docenti_ore_totali).mark_bar().encode(
-                    y=alt.Y('Cognome:N', sort='-y', title="Docente"),
+                    y=alt.Y('Cognome:N', sort='-x', title="Docente"),
                     x=alt.X('Ore Totali Lavorate:Q', title="Ore Lavorate"),
-                    color=alt.Color('Cognome:N', legend=None),
+                    color=alt.Color('Ore Totali Lavorate:Q', scale=alt.Scale(scheme='blues'), legend=None),
                     tooltip=['Cognome', 'Nome', alt.Tooltip('Ore Totali Lavorate', format='.1f')]
                 ).properties(title='Ore totali lavorate per docente (Top 20)').interactive()
                 st.altair_chart(grafico_docenti, use_container_width=True)
