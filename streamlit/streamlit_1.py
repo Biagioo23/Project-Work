@@ -8,6 +8,8 @@ import plotly.express as px
 
 # --- Configurazione Iniziale e Funzioni di Base ---
 
+st.set_page_config(page_title="ITS Rizzoli - Dashboard", layout="wide")
+
 # 📥 Carica il logo solo nella login
 def mostra_logo():
     logo_path = "logo_itsar.png" # Assicurati che questo percorso sia corretto e il file esista
@@ -56,8 +58,7 @@ with st.spinner("Caricamento dati dal database..."):
     df_ore_alunno = load_table('ore_alunno')
 
 
-# Configura la pagina
-st.set_page_config(page_title="ITS Rizzoli - Dashboard", layout="wide")
+
 
 # Utenti autorizzati (email: password)
 # ✅ Utenti autorizzati
