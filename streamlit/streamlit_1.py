@@ -252,7 +252,7 @@ if st.session_state.logged_in:
                 fig, ax = plt.subplots(figsize=(4, 4), facecolor='none')
                 wedges, texts, autotexts = ax.pie(
                     sizes, labels=labels, autopct='%1.1f%%', startangle=90,
-                    colors=colors, textprops={'fontsize': 12, 'color': 'black'}
+                    colors=colors, textprops={'fontsize': 12, 'color': 'white'}
                 )
                 ax.axis('equal')
                 plt.setp(autotexts, size=10, weight="bold")
@@ -296,15 +296,16 @@ if st.session_state.logged_in:
                 sizes_ritirati = ritirati_counts.values
                 colors_ritirati = ['#FF9999', '#66B2FF'] # Colori per Ritirati e Non Ritirati
 
-                fig_ritirati, ax_ritirati = plt.subplots(figsize=(6, 6))
+                fig_ritirati, ax_ritirati = plt.subplots(figsize=(4, 4), facecolor='none')
                 wedges_ritirati, texts_ritirati, autotexts_ritirati = ax_ritirati.pie(
                     sizes_ritirati, labels=labels_ritirati, autopct='%1.1f%%', startangle=90,
-                    colors=colors_ritirati, textprops={'fontsize': 12, 'color': 'black'}
+                    colors=colors_ritirati, textprops={'fontsize': 12, 'color': 'white'}
                 )
                 ax_ritirati.axis('equal')
                 plt.setp(autotexts_ritirati, size=10, weight="bold")
                 plt.setp(texts_ritirati, size=10)
-                st.pyplot(fig_ritirati)
+                plt.tight_layout()
+                st.pyplot(fig_ritirati, clear_figure=True, use_container_width=False)
             else:
                 st.info("ℹ️ Nessun dato sui ritiri degli studenti disponibile o valori inattesi nella colonna 'ritiratocorso'.")
         else:
