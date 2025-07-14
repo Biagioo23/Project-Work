@@ -243,10 +243,12 @@ if st.session_state.logged_in:
             df_filtrato = df_iscrizioni[df_iscrizioni['sesso_pulito'].isin(valid_genders)]
 
             sesso_counts = df_filtrato['sesso_pulito'].value_counts()
-            sesso_counts.columns = ['Sesso', 'Numero Studenti']
+            
 
             if not sesso_counts.empty:
                 # Creazione del grafico a anello (donut chart) con Altair
+                sesso_counts_df = sesso_counts.reset_index()
+                sesso_counts_df.columns = ['Sesso', 'Numero Studenti']
                 chart_sesso = alt.Chart(sesso_counts).mark_arc(outerRadius=120, innerRadius=80).encode(
                     theta=alt.Theta(field="Numero Studenti", type="quantitative"),
                     color=alt.Color(field="Sesso", type="nominal", title="Sesso"),
