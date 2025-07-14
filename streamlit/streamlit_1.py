@@ -360,8 +360,7 @@ if st.session_state.logged_in:
         st.markdown("---")
 
         # Assegnazione Docenti - Corsi (DataFrame)
-        print("Colonne in df_corso_docenti:", df_corso_docenti.columns)
-        df_unito = df_corso_docenti.merge(df_corsi[['idcorsoanno', 'corso']], on='idcorsoanno', how='left')
+        df_unito = pd.merge(df_corso_docenti, df_corsi, on='idcorsoanno', how='inner')
         st.subheader("Assegnazione Docenti - Materia")
         if not df_corso_docenti.empty:
             st.dataframe(df_corso_docenti)
