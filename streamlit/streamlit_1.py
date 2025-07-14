@@ -249,7 +249,7 @@ if st.session_state.logged_in:
                 sizes = sesso_counts.values
                 colors = plt.get_cmap('Set2').colors[:len(labels)]
 
-                fig, ax = plt.subplots(figsize=(4, 4))
+                fig, ax = plt.subplots(figsize=(4, 4), facecolor='none')
                 wedges, texts, autotexts = ax.pie(
                     sizes, labels=labels, autopct='%1.1f%%', startangle=90,
                     colors=colors, textprops={'fontsize': 12, 'color': 'black'}
