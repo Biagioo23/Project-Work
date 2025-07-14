@@ -318,33 +318,7 @@ if st.session_state.logged_in:
 
         st.markdown("---")
 
-        st.subheader("Andamento della presenza studenti (media mensile)")
-
-        if not df_ore_alunno.empty and 'data' in df_ore_alunno.columns and 'minuti_presenza' in df_ore_alunno.columns:
-            # Assicurati che la colonna 'data' sia datetime
-            df_ore_alunno['data'] = pd.to_datetime(df_ore_alunno['data'], errors='coerce')
-            df_ore_alunno = df_ore_alunno.dropna(subset=['data', 'minuti_presenza'])
-
-            # Crea una colonna anno-mese per raggruppare per mese
-            df_ore_alunno['anno_mese'] = df_ore_alunno['data'].dt.to_period('M').dt.to_timestamp()
-
-            # Calcola la media mensile dei minuti di presenza
-            df_mensile = df_ore_alunno.groupby('anno_mese')['minuti_presenza'].mean().reset_index()
-
-            # Grafico a linee con Altair
-            grafico_presenza = alt.Chart(df_mensile).mark_line(point=True).encode(
-                x=alt.X('anno_mese:T', title='Mese'),
-                y=alt.Y('minuti_presenza:Q', title='Media minuti presenza'),
-                tooltip=[alt.Tooltip('anno_mese:T', title='Mese'), alt.Tooltip('minuti_presenza:Q', format=".2f", title='Media minuti')]
-            ).properties(
-                title="Andamento della presenza studenti (media mensile)",
-                width=700,
-                height=400
-            ).interactive()
-
-            st.altair_chart(grafico_presenza, use_container_width=True)
-        else:
-            st.warning("⚠️ La tabella 'df_ore_alunno' è vuota o non contiene le colonne richieste.")
+        
 
 
         # 📚 Dettaglio Ore di Presenza per Materia per studente selezionato
@@ -408,23 +382,26 @@ if st.session_state.logged_in:
             df_stage_pulito = df_stage.dropna(subset=['datainiziostage'])
 
             if not df_stage_pulito.empty:
-                df_stage_pulito['mese_inizio_nome'] = df_stage_pulito['datainiziostage'].dt.strftime('%Y-%m') # Formato 'YYYY-MM' per ordinamento corretto
+                df_stage_pulito['mese_inizio_nome'] = df_stage_pulito['datainiziostage'].dt.strftime('%Y-%m')  # 'YYYY-MM'
                 stage_mese = df_stage_pulito['mese_inizio_nome'].value_counts().sort_index().reset_index()
                 stage_mese.columns = ['Mese', 'Numero Stage']
-                grafico_stage_mese = alt.Chart(stage_mese).mark_bar().encode(
+
+                grafico_stage_mese = alt.Chart(stage_mese).mark_line(point=True).encode(
                     x=alt.X('Mese:N', sort='x', title="Mese di Inizio Stage"),
                     y=alt.Y('Numero Stage:Q', title="Numero di Stage"),
                     tooltip=['Mese', 'Numero Stage']
                 ).properties(title='Distribuzione degli stage per mese di inizio').interactive()
+
                 st.altair_chart(grafico_stage_mese, use_container_width=True)
             else:
                 st.warning("⚠️ Nessun dato valido per le date di inizio stage nella tabella stage.")
         else:
             st.warning("⚠️ La colonna 'datainiziostage' non è presente nella tabella stage o la tabella è vuota.")
 
+
         st.markdown("---")
 
-        # Assegnazione Docenti - Corsi (DataFrame)
+        # Assegnazione Docenti - Corsi
         df_unito = pd.merge(df_corso_docenti, df_corsi, on='idcorsoanno', how='inner')
         df_selezionato = df_unito[['id_utente', 'cognome', 'nome', 'materia', 'corso', 'monte_ore', 'ore_lavorate']]
         st.subheader("Assegnazione Docenti - Materia")
