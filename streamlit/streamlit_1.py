@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from sqlalchemy import create_engine
 import altair as alt
+import plotly.express as px
 
 # --- Configurazione Iniziale e Funzioni di Base ---
 
@@ -197,6 +198,18 @@ if st.session_state.logged_in:
 
         st.markdown("---")
 
+        df_iscrizioni['anno_nascita'] = pd.to_datetime(df_iscrizioni['datanascita'], errors='coerce').dt.year
+        studenti_per_anno = df_iscrizioni['anno_nascita'].value_counts().sort_index()
+        df_plot = studenti_per_anno.reset_index()
+        df_plot.columns = ['Anno di Nascita', 'Numero Studenti']
+
+        fig = px.bar(df_plot, x='Anno di Nascita', y='Numero Studenti',
+                    title='Distribuzione Studenti per Anno di Nascita')
+
+        st.plotly_chart(fig)
+
+        st.markdown("---")
+
         # 🥧 Distribuzione studenti per sesso (CORRETTO PULIZIA DATI)
         st.subheader("Distribuzione studenti per sesso")
 
@@ -364,33 +377,9 @@ if st.session_state.logged_in:
         df_selezionato = df_unito[['id_utente', 'cognome', 'nome', 'materia', 'corso', 'monte_ore', 'ore_lavorate']]
         st.subheader("Assegnazione Docenti - Materia")
         if not df_selezionato.empty:
-            df_filtrato = df_selezionato.copy()
-            col1, col2, col3, col4 = st.columns(4)
-    
-            with col1:
-                nome_opzione = st.selectbox("Seleziona Nome", options=["Tutti"] + sorted(df_filtrato['nome'].dropna().unique().tolist()))
-            with col2:
-                cognome_opzione = st.selectbox("Seleziona Cognome", options=["Tutti"] + sorted(df_filtrato['cognome'].dropna().unique().tolist()))
-            with col3:
-                materia_opzione = st.selectbox("Seleziona Materia", options=["Tutti"] + sorted(df_filtrato['materia'].dropna().unique().tolist()))
-            with col4:
-                corso_opzione = st.selectbox("Seleziona Corso", options=["Tutti"] + sorted(df_filtrato['corso'].dropna().unique().tolist()))
-
-            # Applica i filtri solo se non è selezionato "Tutti"
-            if nome_opzione != "Tutti":
-                df_filtrato = df_filtrato[df_filtrato["nome"] == nome_opzione]
-            if cognome_opzione != "Tutti":
-                df_filtrato = df_filtrato[df_filtrato["cognome"] == cognome_opzione]
-            if materia_opzione != "Tutti":
-                df_filtrato = df_filtrato[df_filtrato["materia"] == materia_opzione]
-            if corso_opzione != "Tutti":
-                df_filtrato = df_filtrato[df_filtrato["corso"] == corso_opzione]
-
-            # Mostra tabella
-            st.dataframe(df_filtrato)
-
+            st.dataframe(df_selezionato)
         else:
-            st.info("ℹ️ La tabella 'selezionato' è vuota.")
+            st.info("ℹ️ La tabella 'corso_docenti' è vuota.")
 
         st.markdown("---")
 
