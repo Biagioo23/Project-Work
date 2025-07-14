@@ -360,37 +360,12 @@ if st.session_state.logged_in:
         st.markdown("---")
 
         # Assegnazione Docenti - Corsi (DataFrame)
+        df_unito = df_corso_docenti.merge(df_corsi[['idcorsoanno', 'corso']], on='idcorsoanno', how='left')
         st.subheader("Assegnazione Docenti - Materia")
         if not df_corso_docenti.empty:
             st.dataframe(df_corso_docenti)
         else:
             st.info("ℹ️ La tabella 'corso_docenti' è vuota.")
-
-        st.markdown("---")
-
-        # 📊 Confronto Ore Effettuate vs. Pianificate per Materia
-        st.subheader("Confronto Ore Effettuate vs. Pianificate per Materia")
-        if all(col in df_corso_materie.columns for col in ['materia', 'ore_effettuate', 'ore_pianificate']) and not df_corso_materie.empty:
-            df_corso_materie['ore_effettuate'] = pd.to_numeric(df_corso_materie['ore_effettuate'], errors='coerce')
-            df_corso_materie['ore_pianificate'] = pd.to_numeric(df_corso_materie['ore_pianificate'], errors='coerce')
-            df_corso_materie_pulito = df_corso_materie.dropna(subset=['ore_effettuate', 'ore_pianificate'])
-
-            if not df_corso_materie_pulito.empty:
-                ore_materia = df_corso_materie_pulito.groupby('materia')[['ore_effettuate', 'ore_pianificate']].sum().reset_index()
-                ore_materia_long = ore_materia.melt('materia', var_name='Tipo Ore', value_name='Ore')
-
-                grafico_confronto_ore = alt.Chart(ore_materia_long).mark_bar().encode(
-                    x=alt.X('materia:N', title="Materia", sort='-y'),
-                    y=alt.Y('Ore:Q', title="Numero di Ore"),
-                    color='Tipo Ore:N',
-                    column=alt.Column('Tipo Ore:N', header=alt.Header(titleOrient="bottom", labelOrient="bottom")),
-                    tooltip=['materia', 'Tipo Ore', alt.Tooltip('Ore', format='.1f')]
-                ).properties(title='Confronto Ore Effettuate vs. Pianificate per Materia').interactive()
-                st.altair_chart(grafico_confronto_ore, use_container_width=True)
-            else:
-                st.warning("⚠️ Nessun dato valido per il confronto delle ore in 'corso_materie_its'.")
-        else:
-            st.warning("⚠️ Colonne necessarie (materia, ore_effettuate, ore_pianificate) non trovate in corso_materie_its o la tabella è vuota.")
 
         st.markdown("---")
 
