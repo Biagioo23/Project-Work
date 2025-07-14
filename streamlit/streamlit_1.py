@@ -243,28 +243,35 @@ if st.session_state.logged_in:
             df_filtrato = df_iscrizioni[df_iscrizioni['sesso_pulito'].isin(valid_genders)]
 
             sesso_counts = df_filtrato['sesso_pulito'].value_counts()
+            sesso_counts.columns = ['Sesso', 'Numero Studenti']
 
             if not sesso_counts.empty:
-                labels = sesso_counts.index.tolist()
-                sizes = sesso_counts.values
-                colors = plt.get_cmap('Set2').colors[:len(labels)]
-
-                fig, ax = plt.subplots(figsize=(4, 4), facecolor='none')
-                wedges, texts, autotexts = ax.pie(
-                    sizes, labels=labels, autopct='%1.1f%%', startangle=90,
-                    colors=colors, textprops={'fontsize': 12, 'color': 'white'}
+                # Creazione del grafico a anello (donut chart) con Altair
+                chart_sesso = alt.Chart(sesso_counts).mark_arc(outerRadius=120, innerRadius=80).encode(
+                    theta=alt.Theta(field="Numero Studenti", type="quantitative"),
+                    color=alt.Color(field="Sesso", type="nominal", title="Sesso"),
+                    order=alt.Order("Numero Studenti", sort="descending"),
+                    tooltip=["Sesso", "Numero Studenti", alt.Tooltip("Numero Studenti", format=".1%", stack=True, title="Percentuale")]
+                ).properties(
+                    title='Distribuzione Studenti per Sesso'
                 )
-                ax.axis('equal')
-                plt.setp(autotexts, size=10, weight="bold")
-                plt.setp(texts, size=10)
-                plt.tight_layout()
-                st.pyplot(fig, clear_figure=True, use_container_width=False)
+
+                # Aggiungi il testo al centro del grafico a anello (opzionale)
+                # Per Altair, il testo al centro richiede un layer separato o una logica più complessa.
+                # Per semplicità, ci focalizziamo sul grafico a anello.
+                
+                text_sesso = chart_sesso.mark_text(radius=140).encode(
+                    text=alt.Text("Numero Studenti", format=".0f"),
+                    order=alt.Order("Numero Studenti", sort="descending"),
+                    color=alt.value("black")
+                )
+
+                st.altair_chart(chart_sesso, use_container_width=True) # Rimuovi 'chart_sesso + text_sesso' se il testo non serve o crea problemi
             else:
-                st.info("ℹ️ Nessun dato valido per 'M' o 'F' nella colonna 'sesso'.")
+                st.info("ℹ️ Nessun dato valido per la colonna 'sesso' dopo la pulizia.")
         else:
             st.warning("⚠️ La colonna 'sesso' non è presente nella tabella iscrizioni o la tabella è vuota.")
-
-
+        
         st.markdown("---")
 
         # 📚 Studenti iscritti per Corso
